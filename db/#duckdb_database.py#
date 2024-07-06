@@ -1,0 +1,45 @@
+class Database:
+
+        schemas = [
+        """
+        CREATE TABLE IF NOT EXISTS training (
+            generation INT,
+            environment_id INT,
+            team_id INT,
+            is_terminated BOOLEAN,
+            is_truncated BOOLEAN,
+            reward FLOAT8,
+            time_step INT,
+            action INT,
+            PRIMARY KEY (generation, team_id, time_step)
+        )
+        """,
+        """
+            CREATE TABLE IF NOT EXISTS teams (
+                    id SERIAL PRIMARY KEY
+            )
+        """,
+        """
+            CREATE TABLE IF NOT EXISTS programs (
+                id SERIAL PRIMARY KEY, 
+                team_id INT,
+                action INT,
+                UNIQUE (id, team_id),
+                FOREIGN KEY (team_id) REFERENCES teams(id)
+            )
+        """,
+        """
+            CREATE TABLE IF NOT EXISTS instructions (
+                id SERIAL PRIMARY KEY,
+                program_id INT,
+                mode VARCHAR,
+                operation VARCHAR,
+                source INT,
+                destination INT,
+                FOREIGN KEY (program_id) REFERENCES programs(id)
+            ) 
+        """
+        ]
+
+        @classmethod
+        def insert_
