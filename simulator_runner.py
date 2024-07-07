@@ -60,7 +60,7 @@ def run_simulators(worker_id, batch_size, num_envs, teams, generation):
     transformed_df = duckdb.query("""
         WITH team_finished_timesteps AS (
             SELECT team_id, 
-                        MIN(time_step) AS last_time_step 
+            MIN(time_step) AS last_time_step 
             FROM cumulative_df 
             WHERE is_terminated = true OR is_truncated = true
             GROUP BY team_id
