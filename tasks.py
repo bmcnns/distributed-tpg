@@ -24,9 +24,9 @@ def start_simulator_runners(worker_batch_sizes, worker_num_envs, teams_per_worke
             task = start_simulator_runner.s(worker_id, batch_size, num_envs, list(batch_of_teams), generation).set(queue=f'{worker_id}')
             tasks.append(task)
 
-            for task in tasks:
-                async_result = task.apply_async()
-                async_results.append(async_result)
+    for task in tasks:
+        async_result = task.apply_async()
+        async_results.append(async_result)
 
     # Wait for results
     for async_result in async_results:

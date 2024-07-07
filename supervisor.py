@@ -7,14 +7,17 @@ import uuid
 if __name__ == '__main__':
     worker_batch_sizes = {
         'desktop': 12,
+        'beelink': 4,
     }
 
     worker_num_envs = {
         'desktop': 12,
+        'beelink': 4,
     }
 
     teams_per_worker = {
-        'desktop':  [str(uuid.uuid4()) for _ in range(360)],
+        'desktop':  [str(uuid.uuid4()) for _ in range(270)],
+        'beelink':  [str(uuid.uuid4()) for _ in range(90)],
     }
 
     num_generations = 100
