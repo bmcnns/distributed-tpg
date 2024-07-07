@@ -18,12 +18,15 @@ def start_simulator_runners(worker_batch_sizes, worker_num_envs, teams_per_worke
     for worker_id, batch_size in worker_batch_sizes.items():
         teams = teams_per_worker.get(worker_id, 0)
         num_envs = worker_num_envs.get(worker_id, 0)
-        
-        task = start_simulator_runner.s(worker_id, batch_size, num_envs, teams, generation).set(queue=f'{worker_id}')
-        tasks.append(task)
+        team_batches = np.array_split(teams, num_envs)
 
-        async_result = task.apply_async()
-        async_results.append(async_result)
+        for batch_of_teams in team_batches:
+            task = start_simulator_runner.s(worker_id, batch_size, num_envs, list(batch_of_teams), generation).set(queue=f'{worker_id}')
+            tasks.append(task)
+
+            for task in tasks:
+                async_result = task.apply_async()
+                async_results.append(async_result)
 
     # Wait for results
     for async_result in async_results:
