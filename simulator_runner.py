@@ -25,7 +25,7 @@ def run_simulators(worker_id, batch_size, num_envs, teams, generation):
 
     cumulative_df = pd.DataFrame(columns=['generation', 'environment_id', 'team_id', 'is_terminated', 'is_truncated', 'reward', 'time_step', 'action'])
 
-    while (num_finished_teams < batch_size):
+    while (num_finished_teams < num_envs):
         obs, rew, term, trunc, info = env.recv()
 
         num_finished_teams += term.sum() + trunc.sum()

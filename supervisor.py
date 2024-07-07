@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
         start_simulator_runners(
             worker_batch_sizes,
+            worker_num_envs,
             teams_per_worker,
             generation=generation,
         )
