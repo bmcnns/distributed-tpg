@@ -8,12 +8,12 @@ import uuid
 import random
 import sys
 
-def run_simulators(worker_id, batch_size, teams, generation):
+def run_simulators(worker_id, batch_size, num_envs, teams, generation):
 
     env = envpool.make(
         "LunarLander-v2",
         env_type="gym",
-        num_envs=batch_size,
+        num_envs=num_envs,
         batch_size=batch_size,
         seed=random.randint(0, 2147483647))
 
@@ -97,8 +97,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Simulator Runner")
     parser.add_argument("--worker-id", type=str, help="ID of the worker running the task")
     parser.add_argument("--batch-size", type=int, help="Batch size (number of cores available)")
+    parser.add_argument("--num-envs", type=int, help="Total number of simulations to run")
     parser.add_argument("--teams", type=str, help="The IDs of the teams being used by this worker", nargs='+')
     parser.add_argument("--generation", type=int, help="The generation that this simulator run is part of")
     args = parser.parse_args()
 
-    run_simulators(args.worker_id, args.batch_size, args.teams, args.generation)
+    run_simulators(args.worker_id, args.batch_size, args.num_envs, args.teams, args.generation)

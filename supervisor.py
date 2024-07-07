@@ -6,11 +6,18 @@ import uuid
 
 if __name__ == '__main__':
     worker_batch_sizes = {
-        'desktop': 1,
+        'desktop': 12,
+        'beelink': 1,
+    }
+
+    worker_num_envs = {
+        'desktop': 36,
+        'beelink': 36
     }
 
     teams_per_worker = {
-        'desktop':  [str(uuid.uuid4()) for _ in range(36)]
+        'desktop':  [str(uuid.uuid4()) for _ in range(36)],
+        'beelink':  [str(uuid.uuid4()) for _ in range(36)]
     }
 
     num_generations = 100
