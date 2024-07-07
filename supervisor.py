@@ -10,16 +10,6 @@ if __name__ == '__main__':
         'beelink': 1,
     }
 
-    worker_num_envs = {
-        'desktop': 8,
-        'beelink': 1,
-    }
-
-    num_simulators_per_worker = {
-        'desktop': 1,
-        'beelink': 1
-    }
-
     teams_per_worker = {
         'desktop':  [str(uuid.uuid4()) for _ in range(18)],
         'beelink':  [str(uuid.uuid4()) for _ in range(18)]
@@ -37,8 +27,6 @@ if __name__ == '__main__':
 
         start_simulator_runners(
             worker_batch_sizes,
-            num_simulators_per_worker,
-            worker_num_envs,
             teams_per_worker,
             generation=generation,
         )
