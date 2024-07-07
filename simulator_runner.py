@@ -83,7 +83,7 @@ def run_simulators(worker_id, batch_size, num_envs, teams, generation):
     Database.connect(
         user="postgres",
         password="template!PWD",
-        host="localhost",
+        host="192.168.4.122",
         port=5432,
         database="postgres"
     )
