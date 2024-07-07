@@ -8,12 +8,12 @@ import uuid
 import random
 import sys
 
-def run_simulators(worker_id, batch_size, num_envs, teams, generation):
+def run_simulators(worker_id, batch_size, teams, generation):
 
     env = envpool.make(
         "LunarLander-v2",
         env_type="gym",
-        num_envs=num_envs,
+        num_envs=batch_size,
         batch_size=batch_size,
         seed=random.randint(0, 2147483647))
 
@@ -25,7 +25,7 @@ def run_simulators(worker_id, batch_size, num_envs, teams, generation):
 
     cumulative_df = pd.DataFrame(columns=['generation', 'environment_id', 'team_id', 'is_terminated', 'is_truncated', 'reward', 'time_step', 'action'])
 
-    while (num_finished_teams < num_envs):
+    while (num_finished_teams < batch_size):
         obs, rew, term, trunc, info = env.recv()
 
         num_finished_teams += term.sum() + trunc.sum()
@@ -97,10 +97,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Simulator Runner")
     parser.add_argument("--worker-id", type=str, help="ID of the worker running the task")
     parser.add_argument("--batch-size", type=int, help="Batch size (number of cores available)")
-    parser.add_argument("--num-envs", type=int, help="Number of simulators to run on this task")
     parser.add_argument("--teams", type=str, help="The IDs of the teams being used by this worker", nargs='+')
     parser.add_argument("--generation", type=int, help="The generation that this simulator run is part of")
     args = parser.parse_args()
 
-    run_simulators(args.worker_id, args.batch_size, args.num_envs, args.teams, args.generation)
+    run_simulators(args.worker_id, args.batch_size, args.teams, args.generation)
     

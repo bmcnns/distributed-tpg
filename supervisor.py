@@ -6,12 +6,12 @@ import uuid
 
 if __name__ == '__main__':
     worker_batch_sizes = {
-        'desktop': 1,
+        'desktop': 8,
         'beelink': 1,
     }
 
     worker_num_envs = {
-        'desktop': 1,
+        'desktop': 8,
         'beelink': 1,
     }
 
