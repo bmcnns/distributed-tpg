@@ -6,19 +6,11 @@ import uuid
 
 if __name__ == '__main__':
     worker_batch_sizes = {
-        'WORKER3': 1,
-    }
-
-    worker_num_envs = {
-        'WORKER3': 1,
-    }
-
-    num_simulators_per_worker = {
-        'WORKER3': 1
+        'desktop': 1,
     }
 
     teams_per_worker = {
-        'WORKER3':  [str(uuid.uuid4()) for _ in range(36)]
+        'desktop':  [str(uuid.uuid4()) for _ in range(36)]
     }
 
     num_generations = 100
@@ -33,8 +25,6 @@ if __name__ == '__main__':
 
         start_simulator_runners(
             worker_batch_sizes,
-            num_simulators_per_worker,
-            worker_num_envs,
             teams_per_worker,
             generation=generation,
         )
