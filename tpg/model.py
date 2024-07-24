@@ -1,0 +1,93 @@
+from tpg.program import Program
+from tpg.team import Team
+from tpg.mutator import Mutator
+from parameters import Parameters
+
+import pickle
+import os
+
+import matplotlib.pyplot as plt
+
+import random
+from typing import List, Tuple, Dict
+import numpy as np
+from uuid import uuid4
+
+from collections import deque
+
+class Model:
+	""" The Model class wraps all Tangled Program Graph functionality into an easy-to-use class. """
+	def __init__(self):
+		#: The pool of available (competitive) programs 
+		self.programPopulation: List[Program] = [ Program() for _ in range(Parameters.INITIAL_PROGRAM_POPULATION)]
+
+		#: The pool of competitive teams 
+		self.teamPopulation: List[Team] = [ Team(self.programPopulation) for _ in range(Parameters.POPULATION_SIZE)]
+
+	def cleanProgramPopulation(self) -> None:
+		"""
+		Used internally. After teams are removed from the population, clean up any programs
+		that are no longer in use, since they are no longer competitive.
+		"""
+		inUseProgramIds: List[str] = []
+		for team in self.teamPopulation:
+			for program in team.programs:
+				inUseProgramIds.append(program.id)
+
+		for program in self.programPopulation:
+			if program.id not in inUseProgramIds:
+				self.programPopulation.remove(program)
+
+	def select(self) -> None:
+		"""
+		After agents (root teams) are evaluated in a generation, this method is called
+		to sort them by fitness and remove POPGAP percentage of the total root team population.
+		The program population is cleaned after teams are removed.
+		"""
+	
+		sortedTeams: List[Team] = list(sorted(self.getRootTeams(), key=lambda team: team.getFitness()))
+
+		remainingTeamsCount: int = int(Parameters.POPGAP * len(self.getRootTeams()))
+
+		for team in sortedTeams[:remainingTeamsCount]:
+			
+			if team.luckyBreaks > 0:
+				team.luckyBreaks -= 1
+				print(f"Tried to remove team {team.id} but they had a lucky break! {team.getFitness()} (remaining breaks: {team.luckyBreaks})")
+			else:
+				if team.referenceCount == 0:
+					print(f"Removing team {team.id} with fitness {team.getFitness()}")
+					self.teamPopulation.remove(team)
+
+		self.cleanProgramPopulation() 
+
+	def evolve(self, generation: int) -> None:
+		"""
+		After removing the uncompetitive teams, clone the remaining competitive root teams
+		and apply mutations to the clones until the discarded population is replaced.
+		"""
+		while len(self.getRootTeams()) < Parameters.POPULATION_SIZE:
+			team = random.choice(self.getRootTeams()).copy()
+
+			Mutator.mutateTeam(self.programPopulation, self.teamPopulation, team)
+
+			self.teamPopulation.append(team)
+
+	def save(self, filename: str) -> None:
+		"""
+		Saves a model by serializing with Pickle
+		Individual teams can't be saved because teams reference other teams.
+		"""
+		os.makedirs(os.path.dirname(filename), exist_ok=True)
+		with open(filename, "wb+") as f:
+			pickle.dump(self, f)
+
+	@staticmethod
+	def load(filename) -> "Model":
+		"""
+		Loads a model from a serialized Pickle file
+		:param filename: the file path to the model being loaded.
+		"""
+		
+		with open(filename, "rb") as f:
+			return pickle.load(f)
