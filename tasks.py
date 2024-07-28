@@ -55,20 +55,11 @@ def run_environment(generation, team_id, model):
     env = gymnasium.make("CartPole-v1")
 
     obs = env.reset()[0]
-    finished = False
-
     team = model.get_team(team_id)
 
     data = []
-
-    cpu_data = []
-
     step = 0
-    time_elapsed = 0.0
-
-    while not finished and step < Parameters.MAX_NUM_STEPS:
-        start_time = datetime.now()
-
+    while step < Parameters.MAX_NUM_STEPS:
         state = obs.flatten()
         action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
         obs, rew, term, trunc, info = env.step(action)
@@ -82,10 +73,10 @@ def run_environment(generation, team_id, model):
             "time_step": step,
         })
 
-        end_time = datetime.now()
-        time_elapsed += (end_time - start_time).total_seconds()
-
         step += 1
+
+        if term or trunc:
+            break
 
     df = pd.DataFrame(data, columns=['generation', 'team_id', 'action', 'reward', 'is_finished', 'time_step'])
 
