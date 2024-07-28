@@ -195,6 +195,7 @@ class Database:
                          team_id,
                          SUM(reward) AS cumulative_reward
                   FROM db.public.training
+                  WHERE generation = '{generation}'
                   GROUP BY generation, team_id
 				)
 

@@ -6,16 +6,13 @@ class Parameters:
 	Default values are provided for the Atari Frostbite environment.
 	"""
 
-	DATABASE_IP = "192.168.4.201"
-
-	#: How many environments to run simultaneously while training
-	NUM_ENVS = 4
+	DATABASE_IP = "192.168.4.203"
 
 	#: HOW MANY TIME STEPS TO RUN THE ENVIRONMENT FOR BEFORE TIMING OUT
 	MAX_NUM_STEPS = 500
 
 	#: The quantity of root teams per generation.
-	POPULATION_SIZE: int = 36
+	POPULATION_SIZE: int = 360
 
 	#: The number of programs generated in the first generation.
 	INITIAL_PROGRAM_POPULATION: int = 1000
@@ -24,13 +21,13 @@ class Parameters:
 	POPGAP: float = 0.5
 	
 	#: The list of possible actions for the environment.
-	ACTIONS: List = [ "NO_ACTION", "LEFT", "MAIN", "RIGHT" ]
+	ACTIONS: List = [ "LEFT", "RIGHT" ]
 
 	#: The name of the environment.
-	ENVIRONMENT: str = "LunarLander-v2"
+	ENVIRONMENT: str = "CartPole-v1"
 
 	#: The size of the state/observation space.
-	NUM_OBSERVATIONS: int = 8
+	NUM_OBSERVATIONS: int = 4
 
 	#: The number of registers that all programs have.
 	NUM_REGISTERS: int = 8

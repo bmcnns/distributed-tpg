@@ -20,7 +20,6 @@ app.conf.update(
     accept_content=['pickle']
 )
 
-
 def record_cpu_utilization(pids, interval=0.01):
     data = []
     start_time = datetime.now()
@@ -53,7 +52,7 @@ def run_environment(generation, team_id, model):
         database="postgres"
     )
 
-    env = gymnasium.make("LunarLander-v2")
+    env = gymnasium.make("CartPole-v1")
 
     obs = env.reset()[0]
     finished = False
@@ -119,12 +118,12 @@ def start_worker(generation, teams, model):
     print("All workers finished.", len(processes))
 
 
-def start_workers(teams_per_worker, generation, model):
+def start_workers(teams_per_worker, worker_batch_sizes, generation, model):
     tasks = []
 
     for worker_id, teams in teams_per_worker.items():
-
-        num_batches = len(teams) // Parameters.NUM_ENVS
+        batch_size = worker_batch_sizes.get(worker_id)
+        num_batches = len(teams) // batch_size
         batches = np.array_split(teams, num_batches)
 
         for batch in batches:

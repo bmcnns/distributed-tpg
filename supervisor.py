@@ -42,12 +42,23 @@ if __name__ == '__main__':
         print(f"Starting generation {generation}...")
 
         teams_per_worker = {
-            "desktop": [str(id) for id in Database.get_root_teams()]
+            "desktop": [str(id) for id in Database.get_root_teams()[:120]],
+            "raspberrypi": [str(id) for id in Database.get_root_teams()[120:180]],
+            "beelink": [str(id) for id in Database.get_root_teams()[180:240]],
+            "macbook": [str(id) for id in Database.get_root_teams()[240:360]]
+        }
+
+        worker_batch_sizes = {
+            "desktop": 12,
+            "raspberrypi": 4,
+            "beelink": 4,
+            "macbook": 8
         }
 
         # Collect training information
         start_workers(
             teams_per_worker,
+            worker_batch_sizes,
             generation,
             model
         )
@@ -68,6 +79,6 @@ if __name__ == '__main__':
         benchmarking_data.append([generation,time_elapsed])
 
     df = pd.DataFrame(benchmarking_data, columns=['generation', 'time_elapsed'])
-    df.to_csv("car_racing_12_envs.csv")
+    df.to_csv("cart_pole_all_hosts.csv")
 
 
