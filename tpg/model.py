@@ -1,3 +1,6 @@
+import math
+
+from db.database import Database
 from tpg.program import Program
 from tpg.team import Team
 from tpg.mutator import Mutator
@@ -73,6 +76,12 @@ class Model:
 
 			self.teamPopulation.append(team)
 
+	def get_team(self, team_id: str) -> Team:
+		for team in self.teamPopulation:
+			if team_id == str(team.id):
+				return team
+		raise Exception("Team was not found in the team population")
+
 	def save(self, filename: str) -> None:
 		"""
 		Saves a model by serializing with Pickle
@@ -91,3 +100,18 @@ class Model:
 		
 		with open(filename, "rb") as f:
 			return pickle.load(f)
+
+	def get_survivor_ids(self, generation) -> List:
+		survivor_count = math.floor(Parameters.POPGAP * Parameters.POPULATION_SIZE)
+
+		sorted_team_ids = Database.get_ranked_teams(generation).sort_values('rank')['team_id']
+		survivor_ids = [ str(team_id) for team_id in sorted_team_ids[:survivor_count].to_list()]
+		return survivor_ids
+
+	def repopulate(self):
+		while len(Database.get_root_teams()) < Parameters.POPULATION_SIZE:
+			original = random.choice(self.teamPopulation)
+			clone = original.copy()
+			Mutator.mutateTeam(self.programPopulation, self.teamPopulation, clone)
+			self.teamPopulation.append(clone)
+			Database.add_team(clone)

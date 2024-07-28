@@ -3,6 +3,9 @@ from psycopg2 import Error
 from psycopg2 import sql
 import pandas as pd
 import duckdb
+from parameters import Parameters
+
+import math
 
 class Database:
 
@@ -10,10 +13,8 @@ class Database:
 		"""
 		CREATE TABLE IF NOT EXISTS training (
 			generation INT,
-			environment_id INT,
 			team_id UUID,
-			is_terminated BOOLEAN,
-			is_truncated BOOLEAN,
+			is_finished BOOLEAN,
 			reward FLOAT8,
 			time_step INT,
 			action INT,
@@ -48,7 +49,7 @@ class Database:
 				source INT,
 				destination INT,
 				FOREIGN KEY (program_id) REFERENCES programs(id)
-			) 
+			);
 		"""
 	]
 
@@ -142,10 +143,10 @@ class Database:
 				cursor.close()
 				
 	@staticmethod
-	def connect_duckdb():
+	def connect_duckdb(ip):
 		duckdb.sql("INSTALL postgres;")
 		duckdb.sql("LOAD postgres;")
-		duckdb.sql("ATTACH 'dbname=postgres user=postgres host=192.168.4.122 password=template!PWD' AS db (TYPE POSTGRES);")
+		duckdb.sql(f"ATTACH 'dbname=postgres user=postgres host={ip} password=template!PWD' AS db (TYPE POSTGRES);")
 
 	@staticmethod
 	def add_team(team):
@@ -155,6 +156,10 @@ class Database:
 	def remove_team(team):
 		duckdb.sql(f"DELETE FROM db.public.programs WHERE team_id = '{team.id}';")
 		duckdb.sql(f"DELETE FROM db.public.teams WHERE id = '{team.id}';")
+
+	@staticmethod
+	def remove_program(program):
+		duckdb.sql(f"DELETE FROM db.public.programs WHERE id = '{program.id}';")
 
 	@staticmethod
 	def add_program(program):
@@ -176,37 +181,26 @@ class Database:
 	def get_root_teams():
 		return duckdb.sql(f"""
 			WITH programs_pointing_to_teams AS (
-			SELECT pointer FROM db.public.programs WHERE pointer IS NOT NULL 
+                        SELECT pointer FROM db.public.programs WHERE pointer IS NOT NULL 
 			)
 			SELECT * FROM db.public.teams 
 			WHERE id NOT IN (SELECT pointer FROM programs_pointing_to_teams)
 		""").df()['id'].tolist()
 
 	@staticmethod
-	def clean_unused_programs():
-		duckdb.sql("""
-			DELETE FROM db.public.instructions
-			WHERE program_id IN (SELECT program_id FROM db.public.programs WHERE team_id IS NULL);
-		""")
-
-		duckdb.sql("""
-			DELETE FROM db.public.programs WHERE team_id IS NULL;
-		""")
-
-	@staticmethod
-	def get_ranked_teams():
-		return duckdb.sql("""
-				WITH team_cumulative_rewards AS (
-						SELECT generation,
-								     team_id,
-								     SUM(reward) AS cumulative_reward
-						FROM db.public.training
-						GROUP BY generation, team_id
+	def get_ranked_teams(generation):
+		return duckdb.sql(f"""
+                WITH team_cumulative_rewards AS (
+                  SELECT generation,
+                         team_id,
+                         SUM(reward) AS cumulative_reward
+                  FROM db.public.training
+                  GROUP BY generation, team_id
 				)
 
 				SELECT generation,
-						team_id,
-						cumulative_reward,
-						ROW_NUMBER() OVER (PARTITION BY generation ORDER BY cumulative_reward DESC) AS rank
-				FROM team_cumulative_rewards""")
-
+			           team_id,
+					   cumulative_reward,
+					   ROW_NUMBER() OVER (PARTITION BY generation ORDER BY cumulative_reward DESC) AS rank
+				FROM team_cumulative_rewards
+				WHERE generation={generation}""").df()

@@ -1,18 +1,15 @@
-from datetime import datetime
-
 import numpy as np
 from celery import Celery, group
 import multiprocessing
 import time
-import gymnasium
+import gym
 import pandas as pd
-import psutil
 import duckdb
 
 from db.database import Database
 from parameters import Parameters
 
-app = Celery('tasks', broker=f'amqp://guest:guest@{Parameters.DATABASE_IP}:5672//', backend='rpc')
+app = Celery('tasks', broker='amqp://guest:guest@192.168.4.196:5672//', backend='rpc')
 
 app.conf.update(
     task_serializer='pickle',
@@ -20,76 +17,42 @@ app.conf.update(
     accept_content=['pickle']
 )
 
-
-def record_cpu_utilization(pids, interval=0.01):
-    data = []
-    start_time = datetime.now()
-
-    while True:
-        if not any(psutil.pid_exists(pid) for pid in pids):
-            print("All processes have stopped")
-            break
-
-        current_time = datetime.now()
-        delta_time = current_time - start_time
-        row = {"time": delta_time.total_seconds()}
-
-        cpu_perc = psutil.cpu_percent(percpu=True, interval=None)
-        for i, percent in enumerate(cpu_perc):
-            row[f"core_{i}"] = percent
-
-        data.append(row)
-        time.sleep(interval)  # Ensure consistent intervals
-
-    df = pd.DataFrame(data)
-    df.to_csv("benchmarking/cpu_utilization.csv", index=False)
-
 def run_environment(generation, team_id, model):
     Database.connect(
         user="postgres",
         password="template!PWD",
-        host=Parameters.DATABASE_IP,
+        host="192.168.4.196",
         port=5432,
         database="postgres"
     )
 
-    env = gymnasium.make("LunarLander-v2")
+    env = gym.make("CarRacing-v1", continuous=False)
 
-    obs = env.reset()[0]
+    obs = env.reset()
     finished = False
 
     team = model.get_team(team_id)
 
     data = []
-
-    cpu_data = []
-
     step = 0
-    time_elapsed = 0.0
-
     while not finished and step < Parameters.MAX_NUM_STEPS:
-        start_time = datetime.now()
+        action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, obs.flatten(), visited=[]))
+        obs, rew, finished, info = env.step(action)
 
-        state = obs.flatten()
-        action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
-        obs, rew, term, trunc, info = env.step(action)
-
+        
+        
         data.append({
             "generation": generation,
             "team_id": team_id,
             "action": action,
             "reward": rew,
-            "is_finished": term or trunc,
-            "time_step": step,
+            "is_finished": finished,
+            "time_step": step
         })
-
-        end_time = datetime.now()
-        time_elapsed += (end_time - start_time).total_seconds()
 
         step += 1
 
     df = pd.DataFrame(data, columns=['generation', 'team_id', 'action', 'reward', 'is_finished', 'time_step'])
-
     Database.store("training", df)
 
     env.close()
@@ -104,17 +67,9 @@ def start_worker(generation, teams, model):
         process.start()
         processes.append(process)
 
-    pids = [process.pid for process in processes]
-
-    benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=[pids])
-    benchmarker.start()
-
     # When all teams are finished, the information is sent back to the supervisor
     for process in processes:
         process.join()
-
-    # Wait for the benchmarker to finish (should be done once any of the processes are done)
-    benchmarker.join()
 
     print("All workers finished.", len(processes))
 

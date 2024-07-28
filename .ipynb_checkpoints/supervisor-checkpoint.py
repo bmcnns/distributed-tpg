@@ -16,14 +16,14 @@ if __name__ == '__main__':
     Database.connect(
         user="postgres",
         password="template!PWD",
-        host=Parameters.DATABASE_IP,
+        host="192.168.4.196",
         port=5432,
         database="postgres"
     )
 
     Database.clear()
     Database.load()
-    Database.connect_duckdb(Parameters.DATABASE_IP)
+    Database.connect_duckdb()
 
     model = Model()
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
         model.repopulate()
 
-        print(Database.get_ranked_teams(generation).sort_values('rank').head(10))
+                print(Database.get_ranked_teams(generation).sort_values('rank').head(10))
 
         end_time = datetime.now()
         delta_time = end_time - start_time

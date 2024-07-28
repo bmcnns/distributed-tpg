@@ -71,7 +71,7 @@ class Instruction:
 			input = state
 		elif self.mode == "REGISTERS":
 			input = registers
-			
+
 		if self.operation == '+': 
 			registers[self.destination] = registers[self.destination] + input[self.source]
 		elif self.operation == "-":
@@ -91,5 +91,5 @@ class Instruction:
 
 		if registers[self.destination] == np.inf:
 			registers[self.destination] = 0#np.finfo(np.float64).min
-		elif registers[self.destination] == np.NINF:
+		elif registers[self.destination] == -np.inf:
 			registers[self.destination] = 0#np.finfo(np.float64).min

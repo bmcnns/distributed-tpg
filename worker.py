@@ -9,5 +9,5 @@ if __name__ == '__main__':
     if not args.worker_name:
         parser.error("Please provide --worker-name")
 
-    app.worker_main(['worker', '--loglevel=info', '--concurrency=1', "-n", args.worker_name, "-Q", args.worker_name])
+    app.worker_main(['worker', '--loglevel=info', '--concurrency=1', "-n", args.worker_name, "-Q", args.worker_name, "--pool=solo"])
     
