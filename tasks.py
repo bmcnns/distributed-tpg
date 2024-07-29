@@ -20,16 +20,13 @@ app.conf.update(
 
 def record_cpu_utilization(pids, interval=0.01):
     data = []
-    start_time = datetime.now()
 
     while True:
         if not any(psutil.pid_exists(pid) for pid in pids):
             print("All processes have stopped")
             break
 
-        current_time = datetime.now()
-        delta_time = current_time - start_time
-        row = {"time": delta_time.total_seconds()}
+        row = {"time": time.time()}
 
         cpu_perc = psutil.cpu_percent(percpu=True, interval=None)
         for i, percent in enumerate(cpu_perc):
