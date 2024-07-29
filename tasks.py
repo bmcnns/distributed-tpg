@@ -1,13 +1,11 @@
-from datetime import datetime
-
 import numpy as np
 from celery import Celery, group
 import multiprocessing
 import time
+import datetime
 import gymnasium
 import pandas as pd
 import psutil
-import duckdb
 
 from db.database import Database
 from parameters import Parameters
@@ -73,7 +71,7 @@ def run_environment(generation, team_id, model):
             "reward": rew,
             "is_finished": term or trunc,
             "time_step": step,
-            "time": datetime.time()
+            "time": time.time()
         })
 
         if term or trunc:
