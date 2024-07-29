@@ -59,18 +59,12 @@ def run_environment(generation, team_id, model):
 
     data = []
     step = 0
-    elapsed_time = 0.0
     while step < Parameters.MAX_NUM_STEPS:
-        start_time = datetime.now()
         state = obs.flatten()
         action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
         obs, rew, term, trunc, info = env.step(action)
 
         step += 1
-
-        end_time = datetime.now()
-        delta_time = end_time - start_time
-        elapsed_time += delta_time.total_seconds()
 
         data.append({
             "generation": generation,
@@ -79,7 +73,7 @@ def run_environment(generation, team_id, model):
             "reward": rew,
             "is_finished": term or trunc,
             "time_step": step,
-            "elapsed_time": elapsed_time
+            "time": datetime.time()
         })
 
         if term or trunc:
@@ -87,7 +81,7 @@ def run_environment(generation, team_id, model):
 
     df = pd.DataFrame(data, columns=['generation', 'team_id', 'action',
                                      'reward', 'is_finished', 'time_step',
-                                     'elapsed_time'])
+                                     'time'])
 
     Database.store("training", df)
 
