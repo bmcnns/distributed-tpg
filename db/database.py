@@ -97,6 +97,7 @@ class Database:
 		DROP TABLE IF EXISTS programs;
 		DROP TABLE IF EXISTS teams;
 		DROP TABLE IF EXISTS training;
+		DROP TABLE IF EXISTS cpu_utilization;
 		"""
 
         cursor.execute(query)

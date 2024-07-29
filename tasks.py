@@ -19,7 +19,7 @@ app.conf.update(
 )
 
 
-def record_cpu_utilization(pids, worker_name, interval=0.01):
+def record_cpu_utilization(pids, worker_name, interval=1):
     Database.connect(
         user="postgres",
         password="template!PWD",
@@ -35,12 +35,13 @@ def record_cpu_utilization(pids, worker_name, interval=0.01):
             print("All processes have stopped")
             break
 
+        current_time = time.time(),
         cpu_perc = psutil.cpu_percent(percpu=True, interval=None)
         for i, percent in enumerate(cpu_perc):
             row = {
                 "worker": worker_name,
-                "time": time.time(),
                 "core": i,
+                "time": current_time,
                 "utilization": percent
             }
 
