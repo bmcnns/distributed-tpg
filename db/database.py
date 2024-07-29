@@ -17,7 +17,7 @@ class Database:
 			is_finished BOOLEAN,
 			reward FLOAT8,
 			time_step INT,
-			elapsed_time FLOAT8,
+			time FLOAT8,
 			action INT,
 			PRIMARY KEY (generation, team_id, time_step)
 		)

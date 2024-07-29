@@ -2,7 +2,7 @@ import numpy as np
 from celery import Celery, group
 import multiprocessing
 import time
-import datetime
+from datetime import datetime
 import gymnasium
 import pandas as pd
 import psutil
