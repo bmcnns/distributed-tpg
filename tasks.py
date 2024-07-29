@@ -50,7 +50,7 @@ def run_environment(generation, team_id, model):
         database="postgres"
     )
 
-    env = gymnasium.make("CartPole-v1")
+    env = gymnasium.make("LunarLander-v2")
 
     obs = env.reset()[0]
     team = model.get_team(team_id)
