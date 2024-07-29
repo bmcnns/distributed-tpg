@@ -13,6 +13,8 @@ from tpg.mutator import Mutator
 
 if __name__ == '__main__':
 
+    print("Connecting to the database...")
+
     Database.connect(
         user="postgres",
         password="template!PWD",
@@ -21,9 +23,13 @@ if __name__ == '__main__':
         database="postgres"
     )
 
+    print("Database connected.")
+
     Database.clear()
     Database.load()
     Database.connect_duckdb(Parameters.DATABASE_IP)
+
+    print("Duckdb connected.")
 
     model = Model()
 
@@ -42,10 +48,9 @@ if __name__ == '__main__':
         print(f"Starting generation {generation}...")
 
         teams_per_worker = {
-            "desktop": [str(id) for id in Database.get_root_teams()[:120]],
-            "raspberrypi": [str(id) for id in Database.get_root_teams()[120:180]],
-            "beelink": [str(id) for id in Database.get_root_teams()[180:240]],
-            "macbook": [str(id) for id in Database.get_root_teams()[240:360]]
+            "desktop": [str(id) for id in Database.get_root_teams()[:240]],
+            "raspberrypi": [str(id) for id in Database.get_root_teams()[240:300]],
+            "beelink": [str(id) for id in Database.get_root_teams()[300:360]],
         }
 
         worker_batch_sizes = {
