@@ -18,7 +18,16 @@ app.conf.update(
     accept_content=['pickle']
 )
 
-def record_cpu_utilization(pids, interval=0.01):
+
+def record_cpu_utilization(pids, worker_name, interval=0.01):
+    Database.connect(
+        user="postgres",
+        password="template!PWD",
+        host=Parameters.DATABASE_IP,
+        port=5432,
+        database="postgres"
+    )
+
     data = []
 
     while True:
@@ -26,17 +35,22 @@ def record_cpu_utilization(pids, interval=0.01):
             print("All processes have stopped")
             break
 
-        row = {"time": time.time()}
-
         cpu_perc = psutil.cpu_percent(percpu=True, interval=None)
         for i, percent in enumerate(cpu_perc):
-            row[f"core_{i}"] = percent
+            row = {
+                "worker": worker_name,
+                "time": time.time(),
+                "core": i,
+                "utilization": percent
+            }
 
-        data.append(row)
+            data.append(row)
+
         time.sleep(interval)  # Ensure consistent intervals
 
     df = pd.DataFrame(data)
-    df.to_csv("benchmarking/cpu_utilization.csv", index=False)
+    Database.store("cpu_utilization", df)
+
 
 def run_environment(generation, team_id, model):
     Database.connect(
@@ -84,7 +98,7 @@ def run_environment(generation, team_id, model):
 
 
 @app.task()
-def start_worker(generation, teams, model):
+def start_worker(generation, teams, model, worker_name):
     processes = []
 
     for team_id in teams:
@@ -94,7 +108,7 @@ def start_worker(generation, teams, model):
 
     pids = [process.pid for process in processes]
 
-    benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=[pids])
+    benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=(pids, worker_name))
     benchmarker.start()
 
     # When all teams are finished, the information is sent back to the supervisor
@@ -116,7 +130,7 @@ def start_workers(teams_per_worker, worker_batch_sizes, generation, model):
         batches = np.array_split(teams, num_batches)
 
         for batch in batches:
-            task = start_worker.s(generation, batch, model).set(queue=f'{worker_id}')
+            task = start_worker.s(generation, batch, model, worker_id).set(queue=f'{worker_id}')
             tasks.append(task)
 
     result = group(tasks)()
