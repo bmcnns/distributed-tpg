@@ -67,11 +67,10 @@ def run_environment(generation, team_id, model, seed):
 
     env = gymnasium.make("LunarLander-v2")
 
-    env.seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
-    obs = env.reset()[0]
+    obs = env.reset(seed=seed)[0]
     team = model.get_team(team_id)
 
     data = []

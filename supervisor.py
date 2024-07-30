@@ -1,6 +1,5 @@
 import time
-from random import random
-
+import random
 from tasks import start_workers
 from tpg.model import Model
 from parameters import Parameters
@@ -44,7 +43,7 @@ if __name__ == '__main__':
     benchmarking_data = []
 
     numGenerations = 200
-    seeds = [ random.randint() for _ in range(numGenerations)]
+    seeds = [ random.randint(0, 2**31 - 1) for _ in range(numGenerations)]
 
     for generation in range(1, numGenerations+1):
         print(f"Starting generation {generation}...")
