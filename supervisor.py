@@ -70,10 +70,10 @@ if __name__ == '__main__':
                 print("Leaf team detected. Not going to delete this one.")
                 continue
             if team.id not in model.get_survivor_ids(generation):
-
                 if team.luckyBreaks > 0:
                     team.luckyBreaks -= 1
                     Database.update_team(team, team.luckyBreaks)
+                    continue
 
                 for program in team.programs:
                     Database.remove_program(program, team)
@@ -83,11 +83,17 @@ if __name__ == '__main__':
                     if str(team.id) == _team.id:
                         model.teamPopulation.remove(team)
                         print(f"Removing team {team.id}")
-            else:
+
+        model.repopulate()
+
+        # Mark the lucky breaks now
+        n = 3
+        top_n_teams = Database.get_ranked_teams(generation).sort_values('rank').head(3)['team_id'].to_list()
+        for team in model.teamPopulation:
+            if str(team.id) in [ str(team_id) for team_id in top_n_teams ]:
                 team.luckyBreaks += 1
                 Database.update_team(team, team.luckyBreaks)
 
-        model.repopulate()
 
         print(Database.get_ranked_teams(generation).sort_values('rank').head(10))
 

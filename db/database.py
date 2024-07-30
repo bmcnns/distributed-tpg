@@ -1,3 +1,5 @@
+import numpy
+import numpy as np
 import psycopg2 as pg
 from psycopg2 import Error
 from psycopg2 import sql
@@ -55,7 +57,20 @@ class Database:
 				generation INT PRIMARY KEY,
 				time FLOAT8
 			);
-		"""
+		""",
+        """
+            CREATE TABLE IF NOT EXISTS observations (
+                id SERIAL PRIMARY KEY,
+                observation FLOAT8[]
+            );
+        """,
+        """
+            CREATE TABLE IF NOT EXISTS diversity_cache (
+                id SERIAL PRIMARY KEY,
+                team_id UUID,
+                profile INT[]
+            );
+        """
     ]
 
     connection = None
@@ -242,3 +257,49 @@ class Database:
     @staticmethod
     def update_team(team, lucky_breaks):
         return duckdb.sql(f"UPDATE db.public.teams SET lucky_breaks = '{lucky_breaks}' WHERE ID = '{team.id}';")
+
+    @staticmethod
+    def add_observation(observation):
+        observation = ', '.join(map(str, observation))
+
+        query = f"""INSERT INTO db.public.observations (observation)
+       VALUES (ARRAY[{observation}])
+       """
+
+        return duckdb.sql(query)
+
+    @staticmethod
+    def add_profile(team, profile):
+        profile = ', '.join(map(str, profile))
+
+        query = f"""
+        INSERT INTO db.public.diversity_cache (team_id, profile)
+        VALUES ('{team.id}', ARRAY[{profile}])
+        """
+
+        return duckdb.sql(query)
+
+    @staticmethod
+    def get_diversity_cache():
+        return duckdb.query(f"""
+        SELECT * FROM db.public.observations
+        ORDER BY id DESC
+        LIMIT {Parameters.DIVERSITY_CACHE_SIZE} 
+        """).df()['observation'].to_list()
+
+    @staticmethod
+    def get_diversity_profiles():
+        profiles = []
+
+        query_results = duckdb.query(f"""
+            SELECT profile FROM db.public.diversity_cache
+            ORDER BY id DESC
+            LIMIT {Parameters.DIVERSITY_CACHE_SIZE}
+        """).df()['profile']
+
+        for profile in query_results:
+            if isinstance(profile, np.ndarray):
+                profile = profile.tolist()
+            profiles.append(profile)
+
+        return profiles

@@ -61,6 +61,8 @@ def run_environment(generation, team_id, model):
         database="postgres"
     )
 
+    Database.connect_duckdb(Parameters.DATABASE_IP)
+
     env = gymnasium.make("LunarLander-v2")
 
     obs = env.reset()[0]
@@ -72,6 +74,8 @@ def run_environment(generation, team_id, model):
         state = obs.flatten()
         action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
         obs, rew, term, trunc, info = env.step(action)
+
+        Database.add_observation(obs)
 
         step += 1
 
