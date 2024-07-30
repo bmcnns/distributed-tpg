@@ -24,32 +24,21 @@ class Database:
 		""",
         """
 			CREATE TABLE IF NOT EXISTS teams (
-					id UUID PRIMARY KEY
-			)
+					id UUID PRIMARY KEY,
+					lucky_breaks INT
+			);
 		""",
         """
 			CREATE TABLE IF NOT EXISTS programs (
-				id UUID PRIMARY KEY, 
+				id UUID, 
 				team_id UUID,
 				action VARCHAR,
 				pointer UUID,
-				UNIQUE (id, team_id),
 				CONSTRAINT action_or_pointer_check CHECK (
 						(action IS NOT NULL AND pointer IS NULL) OR
 						(action IS NULL AND pointer IS NOT NULL)
 				),
-				FOREIGN KEY (team_id) REFERENCES teams(id)
-			);
-		""",
-        """
-			CREATE TABLE IF NOT EXISTS instructions (
-				id UUID PRIMARY KEY,
-				program_id UUID,
-				mode VARCHAR,
-				operation VARCHAR,
-				source INT,
-				destination INT,
-				FOREIGN KEY (program_id) REFERENCES programs(id)
+				PRIMARY KEY (id, team_id)
 			);
 		""",
         """
@@ -60,7 +49,13 @@ class Database:
                 utilization FLOAT8,
                 PRIMARY KEY (time, worker, core)
             );
+        """,
         """
+			CREATE TABLE IF NOT EXISTS time_monitor (
+				generation INT PRIMARY KEY,
+				time FLOAT8
+			);
+		"""
     ]
 
     connection = None
@@ -98,6 +93,7 @@ class Database:
 		DROP TABLE IF EXISTS teams;
 		DROP TABLE IF EXISTS training;
 		DROP TABLE IF EXISTS cpu_utilization;
+		DROP TABLE IF EXISTS time_monitor;
 		"""
 
         cursor.execute(query)
@@ -162,7 +158,7 @@ class Database:
 
     @staticmethod
     def add_team(team):
-        duckdb.sql(f"INSERT INTO db.public.teams (id) VALUES ('{team.id}');")
+        duckdb.sql(f"INSERT INTO db.public.teams (id, lucky_breaks) VALUES ('{team.id}', 0);")
 
     @staticmethod
     def remove_team(team):
@@ -170,14 +166,36 @@ class Database:
         duckdb.sql(f"DELETE FROM db.public.teams WHERE id = '{team.id}';")
 
     @staticmethod
-    def remove_program(program):
-        duckdb.sql(f"DELETE FROM db.public.programs WHERE id = '{program.id}';")
+    def remove_program(program, team):
+        duckdb.sql(f"DELETE FROM db.public.programs WHERE id = '{program.id}' AND team_id = '{team.id}';")
+        print(f"Removed program {program.id} belonging to the team {team.id} from the database.")
 
     @staticmethod
-    def add_program(program):
+    def add_program(program, team):
         duckdb.sql(
-            f"INSERT INTO db.public.programs (id, team_id, action, pointer) VALUES ('{program.id}', NULL, '{program.action}', NULL);")
+            f"INSERT INTO db.public.programs (id, team_id, action, pointer) VALUES ('{program.id}', '{team.id}', '{program.action}', NULL);")
 
+    @staticmethod
+    def update_program(program, team, action, pointer):
+        if not action:
+            action = "NULL"
+        else:
+            action = f"'{action}'"
+
+        if not pointer:
+            pointer = "NULL"
+        else:
+            pointer = f"'{pointer}'"
+
+        duckdb.sql(f"""
+        UPDATE db.public.programs
+        SET
+            action = {action},
+            pointer = {pointer}
+        WHERE id = '{program.id}'
+        AND team_id = '{team.id}'""")
+
+    """
     @staticmethod
     def update_program_team_id(program, team):
         duckdb.sql(f"UPDATE db.public.programs SET team_id = '{team.id}' WHERE id = '{program.id}';")
@@ -185,6 +203,7 @@ class Database:
     @staticmethod
     def update_program_action(program):
         duckdb.sql(f"UPDATE db.public.programs SET action = '{program.action}' WHERE ID = '{program.id}';")
+    """
 
     @staticmethod
     def get_teams():
@@ -193,12 +212,13 @@ class Database:
     @staticmethod
     def get_root_teams():
         return duckdb.sql(f"""
-			WITH programs_pointing_to_teams AS (
-                        SELECT pointer FROM db.public.programs WHERE pointer IS NOT NULL 
-			)
-			SELECT * FROM db.public.teams 
-			WHERE id NOT IN (SELECT pointer FROM programs_pointing_to_teams)
-		""").df()['id'].tolist()
+            WITH programs_pointing_to_teams AS (
+                SELECT pointer FROM db.public.programs WHERE pointer IS NOT NULL
+            )
+
+            SELECT * FROM db.public.teams
+            WHERE id NOT IN (SELECT pointer FROM programs_pointing_to_teams)
+            """).df()['id'].tolist()
 
     @staticmethod
     def get_ranked_teams(generation):
@@ -218,3 +238,7 @@ class Database:
 					   ROW_NUMBER() OVER (PARTITION BY generation ORDER BY cumulative_reward DESC) AS rank
 				FROM team_cumulative_rewards
 				WHERE generation={generation}""").df()
+
+    @staticmethod
+    def update_team(team, lucky_breaks):
+        return duckdb.sql(f"UPDATE db.public.teams SET lucky_breaks = '{lucky_breaks}' WHERE ID = '{team.id}';")

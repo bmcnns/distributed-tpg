@@ -18,7 +18,6 @@ app.conf.update(
     accept_content=['pickle']
 )
 
-
 def record_cpu_utilization(pids, worker_name, interval=1):
     Database.connect(
         user="postgres",

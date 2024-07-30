@@ -1,6 +1,4 @@
 import time
-from datetime import datetime
-
 from tasks import start_workers
 from tpg.model import Model
 from parameters import Parameters
@@ -34,17 +32,15 @@ if __name__ == '__main__':
     model = Model()
 
     # Update the database
-    for program in model.programPopulation:
-        Database.add_program(program)
     for team in model.teamPopulation:
         Database.add_team(team)
 
+        for program in team.programs:
+            Database.add_program(program, team)
 
     time_elapsed = 0.0
     benchmarking_data = []
     for generation in range(1, 10+1):
-        start_time = datetime.now()
-
         print(f"Starting generation {generation}...")
 
         teams_per_worker = {
@@ -69,21 +65,36 @@ if __name__ == '__main__':
         )
 
         for team in model.teamPopulation:
+            # We only purge root teams, otherwise, there would never be any surviving child teams.
+            if team.id not in [str(team_id) for team_id in Database.get_root_teams()]:
+                print("Leaf team detected. Not going to delete this one.")
+                continue
             if team.id not in model.get_survivor_ids(generation):
+
+                if team.luckyBreaks > 0:
+                    team.luckyBreaks -= 1
+                    Database.update_team(team, team.luckyBreaks)
+
                 for program in team.programs:
-                    Database.remove_program(program)
+                    Database.remove_program(program, team)
                 Database.remove_team(team)
+
+                for _team in model.teamPopulation:
+                    if str(team.id) == _team.id:
+                        model.teamPopulation.remove(team)
+                        print(f"Removing team {team.id}")
+            else:
+                team.luckyBreaks += 1
+                Database.update_team(team, team.luckyBreaks)
 
         model.repopulate()
 
         print(Database.get_ranked_teams(generation).sort_values('rank').head(10))
 
-        end_time = datetime.now()
-        delta_time = end_time - start_time
-        time_elapsed += delta_time.total_seconds()
-        benchmarking_data.append([generation,time_elapsed])
+        benchmarking_data = pd.DataFrame([{
+            "generation": generation,
+            "time": time.time()
+        }])
 
-    df = pd.DataFrame(benchmarking_data, columns=['generation', 'time_elapsed'])
-    df.to_csv("cart_pole_all_hosts.csv")
-
-
+        Database.store("time_monitor", benchmarking_data)
+        print(f"Finished generation {generation}...")

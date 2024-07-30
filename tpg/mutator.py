@@ -1,3 +1,4 @@
+from db.database import Database
 from tpg.program import Program, Instruction
 from tpg.team import Team
 from tpg.action import Action
@@ -145,11 +146,14 @@ class Mutator:
 						while newProgram.id in ids:
 							newProgram = random.choice(programPopulation)
 							team.programs.append(newProgram)
+							Database.add_program(newProgram, team)
 
 		# delete a program
 		if random.random() < Parameters.DELETE_PROGRAM_PROBABILITY:
 			if len(team.programs) > 1:
-				team.programs.remove(random.choice(team.programs))
+				removedProgram = random.choice(team.programs)
+				team.programs.remove(removedProgram)
+				Database.remove_program(removedProgram, team)
 				
 		# create a new program
 		if random.random() < Parameters.NEW_PROGRAM_PROBABILITY:
@@ -157,6 +161,7 @@ class Mutator:
 				program: Program = Program()
 				programPopulation.append(program)
 				team.programs.append(program)
+				Database.add_program(program, team)
 
 		# mutate the team's programs
 		for program in team.programs:
@@ -178,12 +183,9 @@ class Mutator:
 				while newTeam.id == team.id:
 					newTeam = random.choice(teamPopulation)
 
-				newTeam.referenceCount += 1    
 				program.action = Action(str(newTeam.id))
+				Database.update_program(program, team, None, newTeam.id)
 			else:
-				#if program.action.value not in Parameters.ACTIONS:
-				#	for t in teamPopulation:
-				#		if str(t.id) == program.action.value:
-							#t.referenceCount -= 1
-							
-				program.action = Action(random.choice(Parameters.ACTIONS))
+				action = random.choice(Parameters.ACTIONS)
+				program.action = Action(action)
+				Database.update_program(program, team, action, None)
