@@ -1,3 +1,5 @@
+from random import random
+
 import numpy as np
 from celery import Celery, group
 import multiprocessing
@@ -52,7 +54,7 @@ def record_cpu_utilization(pids, worker_name, interval=1):
     Database.store("cpu_utilization", df)
 
 
-def run_environment(generation, team_id, model):
+def run_environment(generation, team_id, model, seed):
     Database.connect(
         user="postgres",
         password="template!PWD",
@@ -64,6 +66,10 @@ def run_environment(generation, team_id, model):
     Database.connect_duckdb(Parameters.DATABASE_IP)
 
     env = gymnasium.make("LunarLander-v2")
+
+    env.seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
 
     obs = env.reset()[0]
     team = model.get_team(team_id)
@@ -102,11 +108,11 @@ def run_environment(generation, team_id, model):
 
 
 @app.task()
-def start_worker(generation, teams, model, worker_name):
+def start_worker(generation, teams, model, worker_name, seed):
     processes = []
 
     for team_id in teams:
-        process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model))
+        process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed))
         process.start()
         processes.append(process)
 
@@ -125,7 +131,7 @@ def start_worker(generation, teams, model, worker_name):
     print("All workers finished.", len(processes))
 
 
-def start_workers(teams_per_worker, worker_batch_sizes, generation, model):
+def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed):
     tasks = []
 
     for worker_id, teams in teams_per_worker.items():
@@ -134,7 +140,7 @@ def start_workers(teams_per_worker, worker_batch_sizes, generation, model):
         batches = np.array_split(teams, num_batches)
 
         for batch in batches:
-            task = start_worker.s(generation, batch, model, worker_id).set(queue=f'{worker_id}')
+            task = start_worker.s(generation, batch, model, worker_id, seed).set(queue=f'{worker_id}')
             tasks.append(task)
 
     result = group(tasks)()

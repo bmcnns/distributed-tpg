@@ -1,4 +1,6 @@
 import time
+from random import random
+
 from tasks import start_workers
 from tpg.model import Model
 from parameters import Parameters
@@ -40,20 +42,24 @@ if __name__ == '__main__':
 
     time_elapsed = 0.0
     benchmarking_data = []
-    for generation in range(1, 10+1):
+
+    numGenerations = 200
+    seeds = [ random.randint() for _ in range(numGenerations)]
+
+    for generation in range(1, numGenerations+1):
         print(f"Starting generation {generation}...")
 
         teams_per_worker = {
-            "desktop": [str(id) for id in Database.get_root_teams()[:240]],
-            "raspberrypi": [str(id) for id in Database.get_root_teams()[240:300]],
-            "beelink": [str(id) for id in Database.get_root_teams()[300:360]],
+            "desktop": [str(id) for id in Database.get_root_teams()]
+      #      "raspberrypi": [str(id) for id in Database.get_root_teams()[240:300]],
+     #       "beelink": [str(id) for id in Database.get_root_teams()[300:360]],
         }
 
         worker_batch_sizes = {
             "desktop": 12,
-            "raspberrypi": 4,
-            "beelink": 4,
-            "macbook": 8
+      #      "raspberrypi": 4,
+      #      "beelink": 4,
+      #      "macbook": 8
         }
 
         # Collect training information
@@ -61,7 +67,8 @@ if __name__ == '__main__':
             teams_per_worker,
             worker_batch_sizes,
             generation,
-            model
+            model,
+            seeds[generation - 1]
         )
 
         for team in model.teamPopulation:
