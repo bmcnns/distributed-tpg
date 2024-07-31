@@ -9,7 +9,7 @@ class Parameters:
 	DATABASE_IP = "192.168.4.203"
 
 	#: HOW MANY TIME STEPS TO RUN THE ENVIRONMENT FOR BEFORE TIMING OUT
-	MAX_NUM_STEPS = 500
+	MAX_NUM_STEPS = 1500
 
 	#: The quantity of root teams per generation.
 	POPULATION_SIZE: int = 360

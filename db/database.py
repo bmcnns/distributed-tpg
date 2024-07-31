@@ -109,6 +109,7 @@ class Database:
 		DROP TABLE IF EXISTS training;
 		DROP TABLE IF EXISTS cpu_utilization;
 		DROP TABLE IF EXISTS time_monitor;
+		DROP TABLE IF EXISTS diversity_cache;
 		"""
 
         cursor.execute(query)

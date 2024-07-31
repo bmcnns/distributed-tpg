@@ -49,15 +49,15 @@ if __name__ == '__main__':
         print(f"Starting generation {generation}...")
 
         teams_per_worker = {
-            "desktop": [str(id) for id in Database.get_root_teams()]
-      #      "raspberrypi": [str(id) for id in Database.get_root_teams()[240:300]],
-     #       "beelink": [str(id) for id in Database.get_root_teams()[300:360]],
+                "desktop": [str(id) for id in Database.get_root_teams()[:240]],
+            "raspberrypi": [str(id) for id in Database.get_root_teams()[240:300]],
+            "beelink": [str(id) for id in Database.get_root_teams()[300:360]],
         }
 
         worker_batch_sizes = {
             "desktop": 12,
-      #      "raspberrypi": 4,
-      #      "beelink": 4,
+            "raspberrypi": 4,
+            "beelink": 4,
       #      "macbook": 8
         }
 
@@ -90,10 +90,10 @@ if __name__ == '__main__':
                         model.teamPopulation.remove(team)
                         print(f"Removing team {team.id}")
 
-        model.repopulate()
+        model.repopulate(generation)
 
         # Mark the lucky breaks now
-        n = 3
+        n = 10
         top_n_teams = Database.get_ranked_teams(generation).sort_values('rank').head(3)['team_id'].to_list()
         for team in model.teamPopulation:
             if str(team.id) in [ str(team_id) for team_id in top_n_teams ]:
@@ -110,3 +110,5 @@ if __name__ == '__main__':
 
         Database.store("time_monitor", benchmarking_data)
         print(f"Finished generation {generation}...")
+
+        model.save(f"./saved_models/lunar_lander_{generation}.pkl")

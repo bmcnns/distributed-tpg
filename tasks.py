@@ -1,5 +1,4 @@
-from random import random
-
+import random
 import numpy as np
 from celery import Celery, group
 import multiprocessing

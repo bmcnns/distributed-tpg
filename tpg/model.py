@@ -109,7 +109,7 @@ class Model:
 		survivor_ids = [ str(team_id) for team_id in sorted_team_ids[:survivor_count].to_list()]
 		return survivor_ids
 
-	def repopulate(self):
+	def repopulate(self, generation):
 
 		print("Diversity cache")
 		pprint.pp(Database.get_diversity_cache())
@@ -119,7 +119,10 @@ class Model:
 			original = random.choice(self.teamPopulation)
 			clone = original.copy()
 
-			Mutator.mutateTeam(self.programPopulation, self.teamPopulation, clone)
+			if generation % 10 == 0:
+				for _ in range(10):
+					print("RAMPANT MUTATION")
+					Mutator.mutateTeam(self.programPopulation, self.teamPopulation, clone)
 
 			profile = []
 			for observation in cached_observations:
@@ -127,9 +130,13 @@ class Model:
 
 			print(f"Profile generated for clone {clone.id}")
 
-			while any(np.array_equal(np.array(profile), np.array(cached_profile)) for cached_profile in Database.get_diversity_profiles()):
-				print(f"Profile for clone {clone.id} already in diversity cache. mutating until the behaviour is diverse")
-				Mutator.mutateTeam(self.programPopulation, self.teamPopulation, clone)
+            
+			if any(np.array_equal(np.array(profile), np.array(cached_profile)) for cached_profile in Database.get_diversity_profiles()):
+				print(f"Profile for clone {clone.id} already in diversity cache.")
+
+				# mutate four times??
+				for _ in range(4):
+					Mutator.mutateTeam(self.programPopulation, self.teamPopulation, clone)
 
 				# Regenerate the profile
 				profile = []

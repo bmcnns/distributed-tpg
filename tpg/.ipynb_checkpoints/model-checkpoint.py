@@ -127,14 +127,15 @@ class Model:
 
 			print(f"Profile generated for clone {clone.id}")
 
-			while any(np.array_equal(np.array(profile), np.array(cached_profile)) for cached_profile in Database.get_diversity_profiles()):
-				print(f"Profile for clone {clone.id} already in diversity cache. mutating until the behaviour is diverse")
-				Mutator.mutateTeam(self.programPopulation, self.teamPopulation, clone)
+            
+			#while any(np.array_equal(np.array(profile), np.array(cached_profile)) for cached_profile in Database.get_diversity_profiles()):
+				#print(f"Profile for clone {clone.id} already in diversity cache. mutating until the behaviour is diverse")
+				#Mutator.mutateTeam(self.programPopulation, self.teamPopulation, clone)
 
 				# Regenerate the profile
-				profile = []
-				for observation in cached_observations:
-					profile.append(Parameters.ACTIONS.index(clone.getAction(self.teamPopulation, observation, visited=[])))
+				#profile = []
+				#for observation in cached_observations:
+					#profile.append(Parameters.ACTIONS.index(clone.getAction(self.teamPopulation, observation, visited=[])))
 
 			Database.add_profile(clone, profile)
 
