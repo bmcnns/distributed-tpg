@@ -64,7 +64,7 @@ def run_environment(generation, team_id, model, seed):
 
     Database.connect_duckdb(Parameters.DATABASE_IP)
 
-    env = gymnasium.make("LunarLander-v2")
+    env = gymnasium.make("CartPole-v1")
 
     np.random.seed(seed)
     random.seed(seed)
@@ -75,7 +75,9 @@ def run_environment(generation, team_id, model, seed):
     data = []
     step = 0
     while step < Parameters.MAX_NUM_STEPS:
-        state = obs.flatten()
+        #state = obs.flatten()
+        state = obs
+        print(obs.shape)
         action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
         obs, rew, term, trunc, info = env.step(action)
 
@@ -95,6 +97,7 @@ def run_environment(generation, team_id, model, seed):
 
         if term or trunc:
             break
+
 
     df = pd.DataFrame(data, columns=['generation', 'team_id', 'action',
                                      'reward', 'is_finished', 'time_step',
@@ -126,10 +129,11 @@ def start_worker(generation, teams, model, worker_name, seed):
     # Wait for the benchmarker to finish (should be done once any of the processes are done)
     benchmarker.join()
 
+
     print("All workers finished.", len(processes))
 
 
-def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed):
+def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed, config):
     tasks = []
 
     for worker_id, teams in teams_per_worker.items():
@@ -138,7 +142,7 @@ def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed)
         batches = np.array_split(teams, num_batches)
 
         for batch in batches:
-            task = start_worker.s(generation, batch, model, worker_id, seed).set(queue=f'{worker_id}')
+            task = start_worker.s(generation, batch, model, worker_id, seed, config).set(queue=f'{worker_id}')
             tasks.append(task)
 
     result = group(tasks)()

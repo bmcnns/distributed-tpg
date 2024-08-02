@@ -14,6 +14,8 @@ if __name__ == '__main__':
 
     print("Connecting to the database...")
 
+    config = "bryce-steph"
+
     Database.connect(
         user="postgres",
         password="template!PWD",
@@ -42,23 +44,21 @@ if __name__ == '__main__':
     time_elapsed = 0.0
     benchmarking_data = []
 
-    numGenerations = 200
+    numGenerations = 25
     seeds = [ random.randint(0, 2**31 - 1) for _ in range(numGenerations)]
+
 
     for generation in range(1, numGenerations+1):
         print(f"Starting generation {generation}...")
 
         teams_per_worker = {
-                "desktop": [str(id) for id in Database.get_root_teams()[:240]],
-            "raspberrypi": [str(id) for id in Database.get_root_teams()[240:300]],
-            "beelink": [str(id) for id in Database.get_root_teams()[300:360]],
+            "bryce": 12,
+            "steph": 8
         }
 
         worker_batch_sizes = {
-            "desktop": 12,
-            "raspberrypi": 4,
-            "beelink": 4,
-      #      "macbook": 8
+            "bryce": 12,
+            "steph": 8
         }
 
         # Collect training information
@@ -67,7 +67,8 @@ if __name__ == '__main__':
             worker_batch_sizes,
             generation,
             model,
-            seeds[generation - 1]
+            seeds[generation - 1],
+            config
         )
 
         for team in model.teamPopulation:
