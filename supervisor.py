@@ -13,8 +13,8 @@ from tpg.mutator import Mutator
 if __name__ == '__main__':
 
     print("Connecting to the database...")
-
-    config = "bryce-steph"
+    
+    config = "bryce+steph"
 
     Database.connect(
         user="postgres",
@@ -52,8 +52,8 @@ if __name__ == '__main__':
         print(f"Starting generation {generation}...")
 
         teams_per_worker = {
-            "bryce": 12,
-            "steph": 8
+            "bryce": [str(team_id) for team_id in Database.get_root_teams()[:216]],
+            "steph": [str(team_id) for team_id in Database.get_root_teams()[:144]],
         }
 
         worker_batch_sizes = {

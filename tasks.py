@@ -142,7 +142,7 @@ def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed,
         batches = np.array_split(teams, num_batches)
 
         for batch in batches:
-            task = start_worker.s(generation, batch, model, worker_id, seed, config).set(queue=f'{worker_id}')
+            task = start_worker.s(generation, batch, model, worker_id, seed).set(queue=f'{worker_id}')
             tasks.append(task)
 
     result = group(tasks)()
