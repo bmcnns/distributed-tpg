@@ -99,7 +99,8 @@ def start_worker(generation, teams, model, worker_name, seed, run_id):
     processes = []
     training_data = []
 
-    queue = multiprocessing.Queue()
+    manager = multiprocessing.Manager()
+    queue = manager.Queue()
 
     for team_id in teams:
         process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, queue))
