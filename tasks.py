@@ -54,7 +54,7 @@ def record_cpu_utilization(pids, worker_name, run_id, interval=1):
     Database.disconnect()
 
 
-def run_environment(generation, team_id, model, seed, run_id, queue):
+def run_environment(generation, team_id, model, seed, run_id, shared_list):
     env = gymnasium.make("CartPole-v1")
 
     np.random.seed(seed)
@@ -92,18 +92,18 @@ def run_environment(generation, team_id, model, seed, run_id, queue):
 
     env.close()
 
-    queue.put(training_data)
+    with shared_list.get_lock():
+        shared_list.extend(training_data)
 
 @app.task()
 def start_worker(generation, teams, model, worker_name, seed, run_id):
     processes = []
-    training_data = []
 
     manager = multiprocessing.Manager()
-    queue = manager.Queue()
+    training_data = manager.list()
 
     for team_id in teams:
-        process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, queue))
+        process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, training_data))
         processes.append(process)
         process.start()
 
@@ -115,11 +115,6 @@ def start_worker(generation, teams, model, worker_name, seed, run_id):
     # When all teams are finished, the information is sent back to the supervisor
     for process in processes:
         process.join()
-
-    while not queue.empty():
-        training_data = queue.get()
-        for row in training_data:
-            training_data.append(row)
 
     Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
     Database.add_training_data(training_data)
