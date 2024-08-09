@@ -1,19 +1,16 @@
-import numpy
 import numpy as np
 import psycopg2 as pg
 from psycopg2 import Error
 from psycopg2 import sql
-import pandas as pd
 import duckdb
 from parameters import Parameters
-
-import math
 
 
 class Database:
     schemas = [
         """
-		CREATE TABLE IF NOT EXISTS training (
+		CREATE TABLE IF NOT EXISTS db.public.training (
+			run_id UUID,
 			generation INT,
 			team_id UUID,
 			is_finished BOOLEAN,
@@ -21,17 +18,20 @@ class Database:
 			time_step INT,
 			time FLOAT8,
 			action INT,
-			PRIMARY KEY (generation, team_id, time_step)
+			PRIMARY KEY (run_id, generation, team_id, time_step)
 		)
 		""",
         """
-			CREATE TABLE IF NOT EXISTS teams (
-					id UUID PRIMARY KEY,
-					lucky_breaks INT
+			CREATE TABLE IF NOT EXISTS db.public.teams (
+                run_id UUID,
+                id UUID,
+                lucky_breaks INT,
+                PRIMARY KEY (run_id, id)
 			);
 		""",
         """
-			CREATE TABLE IF NOT EXISTS programs (
+			CREATE TABLE IF NOT EXISTS db.public.programs (
+                run_id UUID,
 				id UUID, 
 				team_id UUID,
 				action VARCHAR,
@@ -40,159 +40,124 @@ class Database:
 						(action IS NOT NULL AND pointer IS NULL) OR
 						(action IS NULL AND pointer IS NOT NULL)
 				),
-				PRIMARY KEY (id, team_id)
+				PRIMARY KEY (run_id, id, team_id)
 			);
 		""",
         """
-            CREATE TABLE IF NOT EXISTS cpu_utilization (
+            CREATE TABLE IF NOT EXISTS db.public.cpu_utilization (
+                run_id UUID,
                 time FLOAT8,
                 worker VARCHAR,
                 core INT,
                 utilization FLOAT8,
-                PRIMARY KEY (time, worker, core)
+                PRIMARY KEY (run_id, time, worker, core)
             );
         """,
         """
-			CREATE TABLE IF NOT EXISTS time_monitor (
-				generation INT PRIMARY KEY,
-				time FLOAT8
+			CREATE TABLE IF NOT EXISTS db.public.time_monitor (
+				run_id UUID,
+				generation INT,
+				time FLOAT8,
+				PRIMARY KEY (run_id, generation)
 			);
 		""",
         """
-            CREATE TABLE IF NOT EXISTS observations (
-                id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS db.public.observations (
+                run_id UUID,
+                time FLOAT8,
                 observation FLOAT8[]
             );
         """,
         """
-            CREATE TABLE IF NOT EXISTS diversity_cache (
-                id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS db.public.diversity_cache (
+                run_id UUID,
+                time FLOAT8,
                 team_id UUID,
                 profile INT[]
             );
         """
     ]
 
-    connection = None
-
     @classmethod
     def connect(cls, user, password, host, port, database):
-        if cls.connection is not None:
-            return cls.connection
-        else:
-            try:
-                cls.connection = pg.connect(
-                    user=user,
-                    password=password,
-                    host=host,
-                    port=port,
-                    database=database
-                )
+        try:
+            duckdb.sql("INSTALL postgres;")
+            duckdb.sql("LOAD postgres;")
+            duckdb.sql(f"ATTACH 'dbname={database} user={user} host={host} password={password}' AS db (TYPE POSTGRES);")
 
-                return cls.connection
+            for schema in cls.schemas:
+                duckdb.sql(schema)
 
-            except (Exception, Error) as error:
-                print("Error while connecting to database", error)
+        except (Exception, Error) as error:
+            print("Error while connecting to database", error)
+
+    @classmethod
+    def disconnect(cls):
+        duckdb.sql("DETACH db;")
 
     @classmethod
     def clear(cls):
-        if not cls.connection:
-            print("Not connected to the database. Please connect to Postgresql first with database.connect()")
-            return
-
-        cursor = cls.connection.cursor()
-
-        query = """
-		DROP TABLE IF EXISTS instructions;
-		DROP TABLE IF EXISTS programs;
-		DROP TABLE IF EXISTS teams;
-		DROP TABLE IF EXISTS training;
-		DROP TABLE IF EXISTS cpu_utilization;
-		DROP TABLE IF EXISTS time_monitor;
-		DROP TABLE IF EXISTS diversity_cache;
-		"""
-
-        cursor.execute(query)
-
-        # Commit the changes and close connection
-        cls.connection.commit()
-        cursor.close()
-
-    @classmethod
-    def load(cls):
-
-        if not cls.connection:
-            print("not connected to the database. please connect to postgresql first with database.connect()")
-            return
-
-        cursor = cls.connection.cursor()
-
-        # initialize the tables
-        for schema in cls.schemas:
-            cursor.execute(schema)
-
-        # Commit the changes and close connection
-        cls.connection.commit()
-        cursor.close()
-
-    #print("Database and tables created successfully")
-
-    @classmethod
-    def store(cls, table_name, df):
-        if not cls.connection:
-            print("Not connected to the database. Please connect to PostgreSQL first with Database.connect()")
-            return
-
-        try:
-            cursor = cls.connection.cursor()
-
-            columns = df.columns.tolist()
-            insert_query = sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
-                sql.Identifier(table_name),
-                sql.SQL(', ').join(map(sql.Identifier, columns)),
-                sql.SQL(', ').join(sql.Placeholder() * len(columns))
-            )
-
-            for row in df.itertuples(index=False, name=None):
-                cursor.execute(insert_query, row)
-
-            # Commit the transaction
-            cls.connection.commit()
-            print(f"Data inserted successfully into {table_name}.")
-
-        except Exception as error:
-            print(f"Error while inserting data: {error}")
-        finally:
-            if cursor:
-                cursor.close()
+        duckdb.sql("""
+		DROP TABLE IF EXISTS db.public.instructions;
+		DROP TABLE IF EXISTS db.public.programs;
+		DROP TABLE IF EXISTS db.public.teams;
+		DROP TABLE IF EXISTS db.public.training;
+		DROP TABLE IF EXISTS db.public.cpu_utilization;
+		DROP TABLE IF EXISTS db.public.observations;
+		DROP TABLE IF EXISTS db.public.time_monitor;
+		DROP TABLE IF EXISTS db.public.diversity_cache;
+		""")
 
     @staticmethod
-    def connect_duckdb(ip):
-        duckdb.sql("INSTALL postgres;")
-        duckdb.sql("LOAD postgres;")
-        duckdb.sql(f"ATTACH 'dbname=postgres user=postgres host={ip} password=template!PWD' AS db (TYPE POSTGRES);")
+    def add_time_monitor_data(run_id, generation, time):
+        duckdb.sql(f"INSERT INTO db.public.time_monitor (run_id, generation, time) VALUES ('{run_id}', {generation}, {time});")
 
     @staticmethod
-    def add_team(team):
-        duckdb.sql(f"INSERT INTO db.public.teams (id, lucky_breaks) VALUES ('{team.id}', 0);")
+    def add_cpu_utilization_data(data):
+        for row in data:
+            run_id = row['run_id']
+            time = row['time']
+            worker = row['worker']
+            core = row['core']
+            utilization = row['utilization']
+            query = f"INSERT INTO db.public.cpu_utilization (run_id, time, worker, core, utilization) VALUES ('{run_id}', {time}, '{worker}', {core}, {utilization});"
+            duckdb.sql(query)
 
     @staticmethod
-    def remove_team(team):
-        duckdb.sql(f"DELETE FROM db.public.programs WHERE team_id = '{team.id}';")
-        duckdb.sql(f"DELETE FROM db.public.teams WHERE id = '{team.id}';")
+    def add_training_data(data):
+        for row in data:
+            run_id = row['run_id']
+            generation = row['generation']
+            team_id = row['team_id']
+            is_finished = row['is_finished']
+            reward = row['reward']
+            time_step = row['time_step']
+            time = row['time']
+            action = row['action']
+            duckdb.sql(
+                f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action})")
 
     @staticmethod
-    def remove_program(program, team):
-        duckdb.sql(f"DELETE FROM db.public.programs WHERE id = '{program.id}' AND team_id = '{team.id}';")
-        print(f"Removed program {program.id} belonging to the team {team.id} from the database.")
+    def add_team(run_id, team):
+        duckdb.sql(f"INSERT INTO db.public.teams (run_id, id, lucky_breaks) VALUES ('{run_id}', '{team.id}', 0);")
 
     @staticmethod
-    def add_program(program, team):
-        duckdb.sql(
-            f"INSERT INTO db.public.programs (id, team_id, action, pointer) VALUES ('{program.id}', '{team.id}', '{program.action}', NULL);")
+    def remove_team(run_id, team):
+        duckdb.sql(f"DELETE FROM db.public.programs WHERE team_id = '{team.id}' AND run_id = '{run_id}';")
+        duckdb.sql(f"DELETE FROM db.public.teams WHERE id = '{team.id}' AND run_id = '{run_id}';")
 
     @staticmethod
-    def update_program(program, team, action, pointer):
+    def remove_program(run_id, program, team):
+        duckdb.sql(f"DELETE FROM db.public.programs WHERE run_id = '{run_id}' AND id = '{program.id}' AND team_id = '{team.id}';")
+
+    @staticmethod
+    def add_program(run_id, program, team):
+        duckdb.sql(f"""
+            INSERT INTO db.public.programs (run_id, id, team_id, action, pointer)
+            VALUES ('{run_id}', '{program.id}', '{team.id}', '{program.action}', NULL);""")
+
+    @staticmethod
+    def update_program(run_id, program, team, action, pointer):
         if not action:
             action = "NULL"
         else:
@@ -208,36 +173,30 @@ class Database:
         SET
             action = {action},
             pointer = {pointer}
-        WHERE id = '{program.id}'
+        WHERE run_id = '{run_id}'
+        AND id = '{program.id}'
         AND team_id = '{team.id}'""")
 
-    """
     @staticmethod
-    def update_program_team_id(program, team):
-        duckdb.sql(f"UPDATE db.public.programs SET team_id = '{team.id}' WHERE id = '{program.id}';")
+    def get_teams(run_id):
+        return duckdb.sql(f"""SELECT * FROM db.public.teams WHERE run_id = '{run_id}'""")
 
     @staticmethod
-    def update_program_action(program):
-        duckdb.sql(f"UPDATE db.public.programs SET action = '{program.action}' WHERE ID = '{program.id}';")
-    """
-
-    @staticmethod
-    def get_teams():
-        return duckdb.sql("""SELECT * FROM db.public.teams""")
-
-    @staticmethod
-    def get_root_teams():
+    def get_root_teams(run_id):
         return duckdb.sql(f"""
             WITH programs_pointing_to_teams AS (
-                SELECT pointer FROM db.public.programs WHERE pointer IS NOT NULL
+                SELECT pointer FROM db.public.programs 
+                WHERE pointer IS NOT NULL
+                AND run_id = '{run_id}'
             )
 
             SELECT * FROM db.public.teams
             WHERE id NOT IN (SELECT pointer FROM programs_pointing_to_teams)
+            AND run_id = '{run_id}'
             """).df()['id'].tolist()
 
     @staticmethod
-    def get_ranked_teams(generation):
+    def get_ranked_teams(run_id, generation):
         return duckdb.sql(f"""
                 WITH team_cumulative_rewards AS (
                   SELECT generation,
@@ -245,6 +204,7 @@ class Database:
                          SUM(reward) AS cumulative_reward
                   FROM db.public.training
                   WHERE generation = '{generation}'
+                  AND run_id = '{run_id}'
                   GROUP BY generation, team_id
 				)
 
@@ -256,45 +216,52 @@ class Database:
 				WHERE generation={generation}""").df()
 
     @staticmethod
-    def update_team(team, lucky_breaks):
-        return duckdb.sql(f"UPDATE db.public.teams SET lucky_breaks = '{lucky_breaks}' WHERE ID = '{team.id}';")
+    def update_team(run_id, team, lucky_breaks):
+        return duckdb.sql(f"""
+        UPDATE db.public.teams SET lucky_breaks = '{lucky_breaks}' 
+        WHERE id = '{team.id}'
+        AND run_id = '{run_id}';
+        """)
 
     @staticmethod
-    def add_observation(observation):
+    def add_observation(run_id, time, observation):
         observation = ', '.join(map(str, observation))
 
-        query = f"""INSERT INTO db.public.observations (observation)
-       VALUES (ARRAY[{observation}])
+        query = f"""
+        INSERT INTO db.public.observations (run_id, time, observation)
+        VALUES ('{run_id}', {time}, ARRAY[{observation}])
        """
 
         return duckdb.sql(query)
 
     @staticmethod
-    def add_profile(team, profile):
+    def add_profile(run_id, team, time, profile):
         profile = ', '.join(map(str, profile))
 
         query = f"""
-        INSERT INTO db.public.diversity_cache (team_id, profile)
-        VALUES ('{team.id}', ARRAY[{profile}])
+        INSERT INTO db.public.diversity_cache (run_id, team_id, time, profile)
+        VALUES ('{run_id}', '{team.id}', {time}, ARRAY[{profile}])
         """
 
         return duckdb.sql(query)
 
     @staticmethod
-    def get_diversity_cache():
+    def get_diversity_cache(run_id):
         return duckdb.query(f"""
         SELECT * FROM db.public.observations
-        ORDER BY id DESC
+        WHERE run_id = '{run_id}'
+        ORDER BY time DESC
         LIMIT {Parameters.DIVERSITY_CACHE_SIZE} 
         """).df()['observation'].to_list()
 
     @staticmethod
-    def get_diversity_profiles():
+    def get_diversity_profiles(run_id):
         profiles = []
 
         query_results = duckdb.query(f"""
             SELECT profile FROM db.public.diversity_cache
-            ORDER BY id DESC
+            WHERE run_id = '{run_id}'
+            ORDER BY time DESC
             LIMIT {Parameters.DIVERSITY_CACHE_SIZE}
         """).df()['profile']
 

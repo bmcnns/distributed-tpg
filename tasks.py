@@ -3,7 +3,6 @@ import numpy as np
 from celery import Celery, group
 import multiprocessing
 import time
-from datetime import datetime
 import gymnasium
 import pandas as pd
 import psutil
@@ -19,7 +18,8 @@ app.conf.update(
     accept_content=['pickle']
 )
 
-def record_cpu_utilization(pids, worker_name, interval=1):
+
+def record_cpu_utilization(pids, worker_name, run_id, interval=1):
     Database.connect(
         user="postgres",
         password="template!PWD",
@@ -35,13 +35,14 @@ def record_cpu_utilization(pids, worker_name, interval=1):
             print("All processes have stopped")
             break
 
-        current_time = time.time(),
+        current_time = time.time()
         cpu_perc = psutil.cpu_percent(percpu=True, interval=None)
         for i, percent in enumerate(cpu_perc):
             row = {
+                "run_id": run_id,
+                "time": current_time,
                 "worker": worker_name,
                 "core": i,
-                "time": current_time,
                 "utilization": percent
             }
 
@@ -49,21 +50,10 @@ def record_cpu_utilization(pids, worker_name, interval=1):
 
         time.sleep(interval)  # Ensure consistent intervals
 
-    df = pd.DataFrame(data)
-    Database.store("cpu_utilization", df)
+    Database.add_cpu_utilization_data(data)
 
 
-def run_environment(generation, team_id, model, seed):
-    Database.connect(
-        user="postgres",
-        password="template!PWD",
-        host=Parameters.DATABASE_IP,
-        port=5432,
-        database="postgres"
-    )
-
-    Database.connect_duckdb(Parameters.DATABASE_IP)
-
+def run_environment(generation, team_id, model, seed, run_id, queue):
     env = gymnasium.make("CartPole-v1")
 
     np.random.seed(seed)
@@ -72,20 +62,21 @@ def run_environment(generation, team_id, model, seed):
     obs = env.reset(seed=seed)[0]
     team = model.get_team(team_id)
 
-    data = []
     step = 0
+
+    training_data = []
     while step < Parameters.MAX_NUM_STEPS:
         #state = obs.flatten()
         state = obs
-        print(obs.shape)
         action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
         obs, rew, term, trunc, info = env.step(action)
 
-        Database.add_observation(obs)
+        #Database.add_observation(run_id, time.time(), obs)
 
         step += 1
 
-        data.append({
+        training_data.append({
+            "run_id": run_id,
             "generation": generation,
             "team_id": team_id,
             "action": action,
@@ -98,42 +89,51 @@ def run_environment(generation, team_id, model, seed):
         if term or trunc:
             break
 
-
-    df = pd.DataFrame(data, columns=['generation', 'team_id', 'action',
-                                     'reward', 'is_finished', 'time_step',
-                                     'time'])
-
-    Database.store("training", df)
-
     env.close()
 
+    queue.put(training_data)
 
 @app.task()
-def start_worker(generation, teams, model, worker_name, seed):
+def start_worker(generation, teams, model, worker_name, seed, run_id):
     processes = []
+    training_data = []
 
     for team_id in teams:
-        process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed))
+        queue = multiprocessing.Queue()
+        process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, queue))
+        processes.append((process, queue))
         process.start()
-        processes.append(process)
 
-    pids = [process.pid for process in processes]
+    pids = [process.pid for (process, _) in processes]
 
-    benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=(pids, worker_name))
+    benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=(pids, worker_name, run_id))
     benchmarker.start()
 
     # When all teams are finished, the information is sent back to the supervisor
-    for process in processes:
+    for process, _ in processes:
         process.join()
+
+    for _, queue in processes:
+        while not queue.empty():
+            for row in queue.get():
+                training_data.append(row)
+
+    print("Here's all the training data collected by the workers...")
+
+    print(training_data)
+
+    Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
+    Database.add_training_data(training_data)
+    Database.disconnect()
+
+    print("Finished adding the training data to the database.")
 
     # Wait for the benchmarker to finish (should be done once any of the processes are done)
     benchmarker.join()
 
-
     print("All workers finished.", len(processes))
 
-
-def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed, config):
+def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed, run_id):
     tasks = []
 
     for worker_id, teams in teams_per_worker.items():
@@ -142,7 +142,7 @@ def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed,
         batches = np.array_split(teams, num_batches)
 
         for batch in batches:
-            task = start_worker.s(generation, batch, model, worker_id, seed).set(queue=f'{worker_id}')
+            task = start_worker.s(generation, batch, model, worker_id, seed, run_id).set(queue=f'{worker_id}')
             tasks.append(task)
 
     result = group(tasks)()

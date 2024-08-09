@@ -2,7 +2,8 @@ import random
 import numpy as np
 import math
 from parameters import Parameters
-from uuid import uuid4
+from uuid import uuid4, UUID
+
 
 class Instruction:
 	def __init__(self): 
@@ -36,7 +37,7 @@ class Instruction:
 		"""
 		When the instruction is cast to a string it will return a human-readable format.
 
-		:return: the instruction casted to a string.
+		:return: the instruction cast to a string.
 		"""
 		address: str = "STATE" if self.mode == "INPUT" else "R"
 

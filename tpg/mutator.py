@@ -110,7 +110,7 @@ class Mutator:
 
 	# TODO: Add a hash for teams so we know each team is unique after mutation
 	@staticmethod
-	def mutateTeam(programPopulation: List[Program], teamPopulation: List[Team], team: Team):
+	def mutateTeam(programPopulation: List[Program], teamPopulation: List[Team], team: Team, run_id):
 		"""
 		A team can be mutated by:
 
@@ -146,14 +146,14 @@ class Mutator:
 						while newProgram.id in ids:
 							newProgram = random.choice(programPopulation)
 							team.programs.append(newProgram)
-							Database.add_program(newProgram, team)
+							Database.add_program(run_id, newProgram, team)
 
 		# delete a program
 		if random.random() < Parameters.DELETE_PROGRAM_PROBABILITY:
 			if len(team.programs) > 1:
 				removedProgram = random.choice(team.programs)
 				team.programs.remove(removedProgram)
-				Database.remove_program(removedProgram, team)
+				Database.remove_program(run_id, removedProgram, team)
 				
 		# create a new program
 		if random.random() < Parameters.NEW_PROGRAM_PROBABILITY:
@@ -161,7 +161,7 @@ class Mutator:
 				program: Program = Program()
 				programPopulation.append(program)
 				team.programs.append(program)
-				Database.add_program(program, team)
+				Database.add_program(run_id, program, team)
 
 		# mutate the team's programs
 		for program in team.programs:
@@ -184,8 +184,8 @@ class Mutator:
 					newTeam = random.choice(teamPopulation)
 
 				program.action = Action(str(newTeam.id))
-				Database.update_program(program, team, None, newTeam.id)
+				Database.update_program(run_id, program, team, None, newTeam.id)
 			else:
 				action = random.choice(Parameters.ACTIONS)
 				program.action = Action(action)
-				Database.update_program(program, team, action, None)
+				Database.update_program(run_id, program, team, action, None)

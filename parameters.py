@@ -6,7 +6,7 @@ class Parameters:
 	Default values are provided for the Atari Frostbite environment.
 	"""
 
-	DATABASE_IP = "192.168.4.205"
+	DATABASE_IP = "192.168.4.216"
 
 	#: HOW MANY TIME STEPS TO RUN THE ENVIRONMENT FOR BEFORE TIMING OUT
 	MAX_NUM_STEPS = 1500
@@ -75,6 +75,6 @@ class Parameters:
 	RAMPANT_MUTATION_INTERVAL: int = 10
 
 	#: On rampant mutation rounds, apply N rounds of mutation. 
-	RAMPANT_MUTATION_COUNT: int = 10
+	RAMPANT_MUTATION_COUNT: int = 1
 	
 	

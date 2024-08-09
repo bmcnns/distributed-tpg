@@ -2,7 +2,7 @@ from tpg.instruction import Instruction
 from tpg.action import Action
 
 import random
-from uuid import uuid4
+from uuid import uuid4, UUID
 from typing import List, Dict
 import numpy as np
 from parameters import Parameters
@@ -13,13 +13,13 @@ class Program:
 	def __init__(self):
 
 		#: A unique id given to the program for identification
-		self.id: UUID = str(uuid4())
+		self.id: str = str(uuid4())
 
 		#: A set of registers modified during program execution. This is emergent behaviour.
 		self.registers: np.array = np.zeros(Parameters.NUM_REGISTERS)
 
 		#: A program is assigned a random action when created.
-		self.action: int = Action(random.choice(Parameters.ACTIONS))
+		self.action: Action = Action(random.choice(Parameters.ACTIONS))
 
 		#: A list of randomly generated instructions varying in size from 1 to MAX_INSTRUCTION_COUNT.
 		self.instructions: List[Instruction] = []
@@ -30,9 +30,9 @@ class Program:
 
 	def __str__(self) -> str:
 		"""
-		Generates a human readable string of the program
+		Generates a human-readable string of the program
 		consisting of all the instructions.
-		:return: A human readable string of the program
+		:return: A human-readable string of the program
 		"""
 		header: str = f"Program {self.id}:\n"
 		instructions: str = '\n'.join(map(str, self.instructions))

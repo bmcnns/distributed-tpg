@@ -25,7 +25,6 @@ if __name__ == '__main__':
 
     Database.clear()
     Database.load()
-    Database.connect_duckdb(Parameters.DATABASE_IP)
 
     print("Duckdb connected.")
 
