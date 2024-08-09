@@ -75,6 +75,12 @@ class Database:
                 team_id UUID,
                 profile INT[]
             );
+        """,
+        """
+            CREATE TABLE IF NOT EXISTS db.public.compute_configs (
+                run_id UUID PRIMARY KEY,
+                config VARCHAR
+            );
         """
     ]
 
@@ -136,6 +142,12 @@ class Database:
             action = row['action']
             duckdb.sql(
                 f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action})")
+
+    @staticmethod
+    def add_compute_config(run_id, config):
+        query = f"INSERT INTO db.public.compute_configs VALUES ('{run_id}', '{config}');"
+        print(query)
+        duckdb.sql(query)
 
     @staticmethod
     def add_team(run_id, team):

@@ -105,12 +105,12 @@ if __name__ == '__main__':
     num_runs = 2
     configurations = [
         {
-            "team_distribution": [("worker1", 360)],
-            "batch_sizes": {"worker1": 8}
+            "team_distribution": [("desktop", 180), ("macbook", 180)],
+            "batch_sizes": {"desktop": 6, "macbook": 6}
         },
         {
-            "team_distribution": [("worker1", 360)],
-            "batch_sizes": {"worker1": 5}
+            "team_distribution": [("desktop", 360)],
+            "batch_sizes": {"desktop": 10}
         }
     ]
 
@@ -118,5 +118,6 @@ if __name__ == '__main__':
     run_ids = [uuid.uuid4() for _ in range(num_runs)]
 
     for run_id, configuration in zip(run_ids, configurations):
+        Database.add_compute_config(run_id, str(configuration["team_distribution"]).replace("'", '"'))
         print(f"RUN_ID: {run_id}")
         train(run_id=run_id, configuration=configuration, num_generations=10)

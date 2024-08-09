@@ -20,14 +20,6 @@ app.conf.update(
 
 
 def record_cpu_utilization(pids, worker_name, run_id, interval=1):
-    Database.connect(
-        user="postgres",
-        password="template!PWD",
-        host=Parameters.DATABASE_IP,
-        port=5432,
-        database="postgres"
-    )
-
     data = []
 
     while True:
@@ -50,7 +42,16 @@ def record_cpu_utilization(pids, worker_name, run_id, interval=1):
 
         time.sleep(interval)  # Ensure consistent intervals
 
+    Database.connect(
+        user="postgres",
+        password="template!PWD",
+        host=Parameters.DATABASE_IP,
+        port=5432,
+        database="postgres")
+
     Database.add_cpu_utilization_data(data)
+
+    Database.disconnect()
 
 
 def run_environment(generation, team_id, model, seed, run_id, queue):
@@ -114,9 +115,9 @@ def start_worker(generation, teams, model, worker_name, seed, run_id):
         process.join()
 
     for _, queue in processes:
-        while not queue.empty():
-            for row in queue.get():
-                training_data.append(row)
+        training_data = queue.get()
+        for row in training_data:
+            training_data.append(row)
 
     print("Here's all the training data collected by the workers...")
 
