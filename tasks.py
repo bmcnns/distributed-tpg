@@ -99,8 +99,7 @@ def start_worker(generation, teams, model, worker_name, seed, run_id):
     processes = []
     training_data = []
 
-    manager = multiprocessing.Manager()
-    queue = manager.Queue()
+    queue = multiprocessing.Queue()
 
     for team_id in teams:
         process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, queue))
@@ -116,7 +115,7 @@ def start_worker(generation, teams, model, worker_name, seed, run_id):
     for process in processes:
         process.join()
 
-    while not queue.empty:
+    while not queue.empty():
         training_data = queue.get()
         for row in training_data:
             training_data.append(row)

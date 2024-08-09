@@ -112,6 +112,7 @@ class Database:
 		DROP TABLE IF EXISTS db.public.observations;
 		DROP TABLE IF EXISTS db.public.time_monitor;
 		DROP TABLE IF EXISTS db.public.diversity_cache;
+		DROP TABLE IF EXISTS db.public.compute_configs;
 		""")
 
     @staticmethod
