@@ -92,8 +92,7 @@ def run_environment(generation, team_id, model, seed, run_id, shared_list):
 
     env.close()
 
-    with shared_list.get_lock():
-        shared_list.extend(training_data)
+    shared_list.extend(training_data)
 
 @app.task()
 def start_worker(generation, teams, model, worker_name, seed, run_id):
