@@ -115,7 +115,7 @@ def start_worker(generation, teams, model, worker_name, seed, run_id):
         process.join()
 
     for _, queue in processes:
-        training_data = queue.get()
+        training_data = queue.get(timeout=60)
         for row in training_data:
             training_data.append(row)
 
