@@ -102,15 +102,11 @@ if __name__ == '__main__':
 
     print("Database connected.")
 
-    num_runs = 2
+    num_runs = 1
     configurations = [
         {
-            "team_distribution": [("desktop", 180), ("macbook", 180)],
-            "batch_sizes": {"desktop": 6, "macbook": 6}
-        },
-        {
             "team_distribution": [("desktop", 360)],
-            "batch_sizes": {"desktop": 10}
+            "batch_sizes": {"desktop": 6}
         }
     ]
 
