@@ -134,7 +134,7 @@ def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed,
 
     for worker_id, teams in teams_per_worker.items():
         batch_size = worker_batch_sizes.get(worker_id)
-        task = start_worker.s(generation, teams_per_worker, model, worker_id, seed, run_id, batch_size).set(queue=f'{worker_id}')
+        task = start_worker.s(generation, teams, model, worker_id, seed, run_id, batch_size).set(queue=f'{worker_id}')
         tasks.append(task)
 
     result = group(tasks)()
