@@ -95,25 +95,28 @@ def run_environment(generation, team_id, model, seed, run_id, shared_list):
     shared_list.extend(training_data)
 
 @app.task()
-def start_worker(generation, teams, model, worker_name, seed, run_id):
+def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size):
     processes = []
 
     manager = multiprocessing.Manager()
     training_data = manager.list()
 
-    for team_id in teams:
-        process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, training_data))
-        processes.append(process)
-        process.start()
+    num_batches = len(teams) // batch_size
+    batches = np.array_split(teams, num_batches)
 
-    pids = [process.pid for process in processes]
+    for batch in batches:
+        for team_id in batch:
+            process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, training_data))
+            processes.append(process)
+            process.start()
 
-    benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=(pids, worker_name, run_id))
-    benchmarker.start()
+        pids = [process.pid for process in processes]
+        #benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=(pids, worker_name, run_id))
+        #benchmarker.start()
 
-    # When all teams are finished, the information is sent back to the supervisor
-    for process in processes:
-        process.join()
+        # When all teams are finished, the information is sent back to the supervisor
+        for process in processes:
+            process.join()
 
     Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
     Database.add_training_data(training_data)
@@ -122,7 +125,7 @@ def start_worker(generation, teams, model, worker_name, seed, run_id):
     print("Finished adding the training data to the database.")
 
     # Wait for the benchmarker to finish (should be done once any of the processes are done)
-    benchmarker.join()
+    #benchmarker.join()
 
     print("All workers finished.", len(processes))
 
@@ -131,12 +134,8 @@ def start_workers(teams_per_worker, worker_batch_sizes, generation, model, seed,
 
     for worker_id, teams in teams_per_worker.items():
         batch_size = worker_batch_sizes.get(worker_id)
-        num_batches = len(teams) // batch_size
-        batches = np.array_split(teams, num_batches)
-
-        for batch in batches:
-            task = start_worker.s(generation, batch, model, worker_id, seed, run_id).set(queue=f'{worker_id}')
-            tasks.append(task)
+        task = start_worker.s(generation, teams_per_worker, model, worker_id, seed, run_id, batch_size).set(queue=f'{worker_id}')
+        tasks.append(task)
 
     result = group(tasks)()
     result.get()

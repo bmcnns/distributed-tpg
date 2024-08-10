@@ -6,7 +6,7 @@ class Parameters:
 	Default values are provided for the Atari Frostbite environment.
 	"""
 
-	DATABASE_IP = "192.168.4.216"
+	DATABASE_IP = "192.168.4.204"
 
 	#: HOW MANY TIME STEPS TO RUN THE ENVIRONMENT FOR BEFORE TIMING OUT
 	MAX_NUM_STEPS = 1500
