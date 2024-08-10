@@ -21,7 +21,7 @@ class Parameters:
 	POPGAP: float = 0.5
 	
 	#: The list of possible actions for the environment.
-	ACTIONS: List = [ "NO_ACTION", "GAS", "BRAKE", "STEER_LEFT", "STEER_RIGHT" ]
+	ACTIONS: List = [ "DO_NOTHING", "FIRE_LEFT", "FIRE_MAIN", "FIRE_RIGHT" ]
 
 	#: The name of the environment.
 	ENVIRONMENT: str = "LunarLander-v2"
