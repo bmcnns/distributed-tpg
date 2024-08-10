@@ -133,6 +133,8 @@ class Database:
 
     @staticmethod
     def add_training_data(data):
+        data
+
         for row in data:
             run_id = row['run_id']
             generation = row['generation']
@@ -144,7 +146,7 @@ class Database:
             action = row['action']
 
             duckdb.sql(
-                f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action}) ON CONFLICT (run_id, generation, team_id, time_step) DO NOTHING;")
+                f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action});")
 
     @staticmethod
     def add_compute_config(run_id, team_distribution, batch_sizes):

@@ -12,7 +12,7 @@ class Parameters:
 	MAX_NUM_STEPS = 1000
 
 	#: The quantity of root teams per generation.
-	POPULATION_SIZE: int = 180
+	POPULATION_SIZE: int = 360
 
 	#: The number of programs generated in the first generation.
 	INITIAL_PROGRAM_POPULATION: int = 1000
@@ -24,10 +24,10 @@ class Parameters:
 	ACTIONS: List = [ "NO_ACTION", "GAS", "BRAKE", "STEER_LEFT", "STEER_RIGHT" ]
 
 	#: The name of the environment.
-	ENVIRONMENT: str = "CarRacing-v2"
+	ENVIRONMENT: str = "LunarLander-v2"
 
 	#: The size of the state/observation space.
-	NUM_OBSERVATIONS: int = 27648
+	NUM_OBSERVATIONS: int = 8
 
 	#: The number of registers that all programs have.
 	NUM_REGISTERS: int = 8
