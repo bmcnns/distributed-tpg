@@ -24,7 +24,7 @@ class Parameters:
 	ACTIONS: List = [ "NO_ACTION", "GAS", "BRAKE", "STEER_LEFT", "STEER_RIGHT" ]
 
 	#: The name of the environment.
-	ENVIRONMENT: str = "CarRacing-v1"
+	ENVIRONMENT: str = "CarRacing-v2"
 
 	#: The size of the state/observation space.
 	NUM_OBSERVATIONS: int = 27648

@@ -45,7 +45,7 @@ def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
     shared_list.extend(data)
 
 def run_environment(generation, team_id, model, seed, run_id, shared_list):
-    env = gymnasium.make("CarRacing-v2")
+    env = gymnasium.make("CarRacing-v2", continuous=False)
 
     np.random.seed(seed)
     random.seed(seed)
