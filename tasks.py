@@ -19,7 +19,7 @@ app.conf.update(
 )
 
 
-def record_cpu_utilization(pids, worker_name, run_id, interval=1):
+def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
     data = []
 
     while True:
@@ -42,17 +42,7 @@ def record_cpu_utilization(pids, worker_name, run_id, interval=1):
 
         time.sleep(interval)  # Ensure consistent intervals
 
-    Database.connect(
-        user="postgres",
-        password="template!PWD",
-        host=Parameters.DATABASE_IP,
-        port=5432,
-        database="postgres")
-
-    Database.add_cpu_utilization_data(data)
-
-    Database.disconnect()
-
+    shared_list.extend(data)
 
 def run_environment(generation, team_id, model, seed, run_id, shared_list):
     env = gymnasium.make("CartPole-v1")
@@ -100,6 +90,7 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
 
     manager = multiprocessing.Manager()
     training_data = manager.list()
+    cpu_utilization_data = manager.list()
 
     num_batches = len(teams) // batch_size
     batches = np.array_split(teams, num_batches)
@@ -111,21 +102,22 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
             process.start()
 
         pids = [process.pid for process in processes]
-        #benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=(pids, worker_name, run_id))
-        #benchmarker.start()
+        benchmarker = multiprocessing.Process(target=record_cpu_utilization, args=(pids, worker_name, run_id, cpu_utilization_data))
+        benchmarker.start()
 
         # When all teams are finished, the information is sent back to the supervisor
         for process in processes:
+            print(f"Process {process.pid} finished... waiting for other processes to join")
             process.join()
+
+        # Wait for the benchmarker to finish
+        benchmarker.join()
 
     Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
     Database.add_training_data(training_data)
-    Database.disconnect()
-
+    Database.add_cpu_utilization_data(cpu_utilization_data)
     print("Finished adding the training data to the database.")
 
-    # Wait for the benchmarker to finish (should be done once any of the processes are done)
-    #benchmarker.join()
 
     print("All workers finished.", len(processes))
 

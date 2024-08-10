@@ -79,7 +79,8 @@ class Database:
         """
             CREATE TABLE IF NOT EXISTS db.public.compute_configs (
                 run_id UUID PRIMARY KEY,
-                config VARCHAR
+                team_distribution VARCHAR,
+                batch_sizes VARCHAR
             );
         """
     ]
@@ -145,8 +146,8 @@ class Database:
                 f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action})")
 
     @staticmethod
-    def add_compute_config(run_id, config):
-        query = f"INSERT INTO db.public.compute_configs VALUES ('{run_id}', '{config}');"
+    def add_compute_config(run_id, team_distribution, batch_sizes):
+        query = f"INSERT INTO db.public.compute_configs VALUES ('{run_id}', '{team_distribution}', '{batch_sizes}');"
         print(query)
         duckdb.sql(query)
 

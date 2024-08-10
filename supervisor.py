@@ -102,15 +102,19 @@ if __name__ == '__main__':
 
     print("Database connected.")
 
-    num_runs = 2
+    num_runs = 3
     configurations = [
         {
-            "team_distribution": [("desktop", 180), ("macbook", 180)],
-            "batch_sizes": {"desktop": 6, "macbook": 6}
+            "team_distribution": [("alice", 180), ("bob", 180)],
+            "batch_sizes": {"alice": 6, "bob": 6}
         },
         {
-            "team_distribution": [("desktop", 360)],
-            "batch_sizes": {"desktop": 6}
+            "team_distribution": [("alice", 360)],
+            "batch_sizes": {"alice": 6}
+        },
+        {
+            "team_distribution": [("alice", 360)],
+            "batch_sizes": {"alice": 1}
         }
     ]
 
@@ -118,6 +122,12 @@ if __name__ == '__main__':
     run_ids = [uuid.uuid4() for _ in range(num_runs)]
 
     for run_id, configuration in zip(run_ids, configurations):
-        Database.add_compute_config(run_id, str(configuration["team_distribution"]).replace("'", '"'))
+
+        Database.add_compute_config(
+            run_id,
+            str(configuration["team_distribution"]).replace("'", '"'),
+            str(configuration["batch_sizes"]).replace("'", '"')
+        )
+
         print(f"RUN_ID: {run_id}")
         train(run_id=run_id, configuration=configuration, num_generations=10)
