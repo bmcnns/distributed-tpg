@@ -45,7 +45,7 @@ def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
     shared_list.extend(data)
 
 def run_environment(generation, team_id, model, seed, run_id, shared_list):
-    env = gymnasium.make("CarRacing-v1")
+    env = gymnasium.make("CarRacing-v2")
 
     np.random.seed(seed)
     random.seed(seed)
@@ -107,7 +107,6 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
 
         # When all teams are finished, the information is sent back to the supervisor
         for process in processes:
-            print(f"Process {process.pid} finished... waiting for other processes to join")
             process.join()
 
         # Wait for the benchmarker to finish
