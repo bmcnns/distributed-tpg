@@ -116,10 +116,7 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
 
     Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
 
-    df = pd.DataFrame(training_data)
-    df_unique = df.drop_duplicates()
-    unique_list_of_dicts = df_unique.to_dict(orient='records')
-    Database.add_training_data(unique_list_of_dicts)
+    Database.add_training_data(training_data)
 
     Database.add_cpu_utilization_data(cpu_utilization_data)
     print("Finished adding the training data to the database.")
