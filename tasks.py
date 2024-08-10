@@ -45,7 +45,7 @@ def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
     shared_list.extend(data)
 
 def run_environment(generation, team_id, model, seed, run_id, shared_list):
-    env = gymnasium.make("CartPole-v1")
+    env = gymnasium.make("CarRacing-v1")
 
     np.random.seed(seed)
     random.seed(seed)
@@ -57,8 +57,8 @@ def run_environment(generation, team_id, model, seed, run_id, shared_list):
 
     training_data = []
     while step < Parameters.MAX_NUM_STEPS:
-        #state = obs.flatten()
-        state = obs
+        state = obs.flatten()
+        #state = obs
         action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
         obs, rew, term, trunc, info = env.step(action)
 
