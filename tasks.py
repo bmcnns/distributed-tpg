@@ -112,7 +112,10 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
         # Wait for the benchmarker to finish
         benchmarker.join()
 
+    print("All environments finished. Uploading to the database now.")
+
     Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
+
     Database.add_training_data(training_data)
     Database.add_cpu_utilization_data(cpu_utilization_data)
     print("Finished adding the training data to the database.")

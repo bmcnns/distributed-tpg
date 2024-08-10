@@ -142,8 +142,12 @@ class Database:
             time_step = row['time_step']
             time = row['time']
             action = row['action']
-            duckdb.sql(
-                f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action})")
+
+            try:
+                duckdb.sql(
+                    f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action})")
+            except:
+                print("Could not insert data into db.public.training... skipping")
 
     @staticmethod
     def add_compute_config(run_id, team_distribution, batch_sizes):

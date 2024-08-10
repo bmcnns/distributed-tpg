@@ -105,15 +105,15 @@ if __name__ == '__main__':
     num_runs = 3
     configurations = [
         {
-            "team_distribution": [("alice", 180), ("bob", 180)],
+            "team_distribution": [("alice", 90), ("bob", 90)],
             "batch_sizes": {"alice": 6, "bob": 6}
         },
         {
-            "team_distribution": [("alice", 360)],
+            "team_distribution": [("alice", 180)],
             "batch_sizes": {"alice": 6}
         },
         {
-            "team_distribution": [("alice", 360)],
+            "team_distribution": [("alice", 180)],
             "batch_sizes": {"alice": 1}
         }
     ]

@@ -12,7 +12,7 @@ class Parameters:
 	MAX_NUM_STEPS = 1500
 
 	#: The quantity of root teams per generation.
-	POPULATION_SIZE: int = 360
+	POPULATION_SIZE: int = 180
 
 	#: The number of programs generated in the first generation.
 	INITIAL_PROGRAM_POPULATION: int = 1000
