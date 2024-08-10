@@ -119,6 +119,8 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
     Database.add_training_data(training_data)
 
     Database.add_cpu_utilization_data(cpu_utilization_data)
+    Database.disconnect()
+
     print("Finished adding the training data to the database.")
 
 
