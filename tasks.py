@@ -24,7 +24,6 @@ def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
 
     while True:
         if not any(psutil.pid_exists(pid) for pid in pids):
-            print("All processes have stopped")
             break
 
         current_time = time.time()
@@ -95,6 +94,7 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
     num_batches = len(teams) // batch_size
     batches = np.array_split(teams, num_batches)
 
+    team_count = 0
     for batch in batches:
         for team_id in batch:
             process = multiprocessing.Process(target=run_environment, args=(generation, team_id, model, seed, run_id, training_data))
@@ -107,7 +107,9 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
 
         # When all teams are finished, the information is sent back to the supervisor
         for process in processes:
+            team_count += 1
             process.join()
+            print(f"Generation {generation}: [{team_count}/{Parameters.POPULATION_SIZE}]")
 
         # Wait for the benchmarker to finish
         benchmarker.join()
@@ -117,7 +119,6 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
     Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
 
     Database.add_training_data(training_data)
-
     Database.add_cpu_utilization_data(cpu_utilization_data)
     Database.disconnect()
 
