@@ -84,7 +84,7 @@ def run_environment(generation, team_id, model, seed, run_id, shared_list):
 
     shared_list.extend(training_data)
 
-@app.task()
+@app.task(max_retries=0)
 def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size):
     processes = []
 
