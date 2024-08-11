@@ -1,3 +1,6 @@
+import csv
+from tempfile import NamedTemporaryFile
+
 import numpy as np
 import psycopg2 as pg
 from psycopg2 import Error
@@ -134,16 +137,35 @@ class Database:
 
     @staticmethod
     def add_training_data(data):
-        placeholders = ','.join(['?' for _ in range(len(data[0]))])
-        sql_query = f"INSERT INTO db.public.training VALUES ({placeholders})"
+        try:
+            # Create a temporary CSV file
+            with NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as temp_file:
+                writer = csv.writer(temp_file)
 
-        values = [
-            (row['run_id'], row['generation'], row['team_id'], row['is_finished'], row['reward'], row['time_step'],
-             row['time'], row['action'])
-            for row in data
-        ]
+                # Write data rows to the CSV file
+                for row in data:
+                    writer.writerow([
+                        row['run_id'],
+                        row['generation'],
+                        row['team_id'],
+                        row['is_finished'],
+                        row['reward'],
+                        row['time_step'],
+                        row['time'],
+                        row['action']
+                    ])
 
-        duckdb.executemany(sql_query, values)
+                temp_file_path = temp_file.name
+
+            # Use the COPY command to load data from the CSV file
+            duckdb.query(f"""
+                    COPY db.public.training FROM '{temp_file_path}' (FORMAT CSV);
+                """)
+
+        except Exception as e:
+            # Handle any exceptions
+            print(f"An error occurred: {e}")
+            raise e
 
     @staticmethod
     def add_compute_config(run_id, team_distribution, batch_sizes):
