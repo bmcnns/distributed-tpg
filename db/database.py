@@ -118,7 +118,8 @@ class Database:
 
     @staticmethod
     def add_time_monitor_data(run_id, generation, time):
-        duckdb.sql(f"INSERT INTO db.public.time_monitor (run_id, generation, time) VALUES ('{run_id}', {generation}, {time});")
+        duckdb.sql(
+            f"INSERT INTO db.public.time_monitor (run_id, generation, time) VALUES ('{run_id}', {generation}, {time});")
 
     @staticmethod
     def add_cpu_utilization_data(data):
@@ -133,20 +134,16 @@ class Database:
 
     @staticmethod
     def add_training_data(data):
-        data
+        placeholders = ','.join(['?' for _ in range(len(data[0]))])
+        sql_query = f"INSERT INTO db.public.training VALUES ({placeholders})"
 
-        for row in data:
-            run_id = row['run_id']
-            generation = row['generation']
-            team_id = row['team_id']
-            is_finished = row['is_finished']
-            reward = row['reward']
-            time_step = row['time_step']
-            time = row['time']
-            action = row['action']
+        values = [
+            (row['run_id'], row['generation'], row['team_id'], row['is_finished'], row['reward'], row['time_step'],
+             row['time'], row['action'])
+            for row in data
+        ]
 
-            duckdb.sql(
-                f"INSERT INTO db.public.training VALUES ('{run_id}', {generation}, '{team_id}', {is_finished}, {reward}, {time_step}, {time}, {action});")
+        duckdb.executemany(sql_query, values)
 
     @staticmethod
     def add_compute_config(run_id, team_distribution, batch_sizes):
@@ -165,7 +162,8 @@ class Database:
 
     @staticmethod
     def remove_program(run_id, program, team):
-        duckdb.sql(f"DELETE FROM db.public.programs WHERE run_id = '{run_id}' AND id = '{program.id}' AND team_id = '{team.id}';")
+        duckdb.sql(
+            f"DELETE FROM db.public.programs WHERE run_id = '{run_id}' AND id = '{program.id}' AND team_id = '{team.id}';")
 
     @staticmethod
     def add_program(run_id, program, team):

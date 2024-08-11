@@ -4,6 +4,8 @@ services:
   rabbitmq:
     image: rabbitmq:latest
     container_name: rabbitmq
+    environment:
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit consumer_timeout 36000000
     ports:
       - "5672:5672"
 
