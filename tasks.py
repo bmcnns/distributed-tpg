@@ -17,7 +17,7 @@ app.conf.update(
     result_serializer='pickle',
     accept_content=['pickle'],
     task_acks_on_failure_or_timeout=True,
-    broker_heartbeat=1800,
+    broker_heartbeat=30,
     broker_connection_timeout=1800,
     worker_cancel_long_running_tasks_on_connection_loss=False,
 )
@@ -26,7 +26,6 @@ app.conf.worker_deduplicate_successful_tasks = True
 app.conf.broker_transport_options = {'visibility_timeout': 14400}
 app.conf.result_backend_transport_options = {'visibility_timeout': 14400}
 app.conf.visibility_timeout = 14400
-app.conf.task_acks_late = True
 
 def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
     data = []
@@ -92,7 +91,7 @@ def run_environment(generation, team_id, model, seed, run_id, shared_list):
 
     shared_list.extend(training_data)
 
-@app.task(max_retries=0, acks_late=True)
+@app.task(max_retries=0)
 def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size):
     processes = []
 
