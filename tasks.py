@@ -19,8 +19,10 @@ app.conf.update(
     task_acks_on_failure_or_timeout=True,
 )
 
-app.conf.broker_transport_options = {"visibility_timeout": 36000}
 app.conf.worker_deduplicate_successful_tasks = True
+app.conf.broker_transport_options = {'visibility_timeout': 14400}
+app.conf.result_backend_transport_options = {'visibility_timeout': 14400}
+app.conf.visibility_timeout = 14400
 
 def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
     data = []
