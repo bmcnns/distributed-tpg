@@ -107,8 +107,8 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
 
         # When all teams are finished, the information is sent back to the supervisor
         for process in processes:
-            team_count += 1
             process.join()
+            team_count += 1
             print(f"Generation {generation}: [{team_count}/{Parameters.POPULATION_SIZE}]")
 
         # Wait for the benchmarker to finish
