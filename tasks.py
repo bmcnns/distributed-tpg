@@ -10,7 +10,7 @@ import psutil
 from db.database import Database
 from parameters import Parameters
 
-app = Celery('tasks', broker=f'amqp://guest:guest@{Parameters.DATABASE_IP}:5672//', backend='rpc')
+app = Celery('tasks', broker=f'redis://{Parameters.DATABASE_IP}:6379/0', backend=f'redis://{Parameters.DATABASE_IP}:6379/0')
 
 app.conf.update(
     task_serializer='pickle',
