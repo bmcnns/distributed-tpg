@@ -15,7 +15,8 @@ app = Celery('tasks', broker=f'amqp://guest:guest@{Parameters.DATABASE_IP}:5672/
 app.conf.update(
     task_serializer='pickle',
     result_serializer='pickle',
-    accept_content=['pickle']
+    accept_content=['pickle'],
+    task_acks_on_failure_or_timeout=True,
 )
 
 

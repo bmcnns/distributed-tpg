@@ -1,4 +1,5 @@
 import csv
+import os
 from tempfile import NamedTemporaryFile
 
 import numpy as np
@@ -161,6 +162,8 @@ class Database:
             duckdb.query(f"""
                     COPY db.public.training FROM '{temp_file_path}' (FORMAT CSV);
                 """)
+
+            os.remove(temp_file_path)
 
         except Exception as e:
             # Handle any exceptions
