@@ -19,6 +19,8 @@ app.conf.update(
     task_acks_on_failure_or_timeout=True,
 )
 
+app.conf.broker_transport_options = {"visibility_timeout": 36000}
+app.conf.worker_deduplicate_successful_tasks = True
 
 def record_cpu_utilization(pids, worker_name, run_id, shared_list, interval=1):
     data = []
@@ -117,7 +119,6 @@ def start_worker(generation, teams, model, worker_name, seed, run_id, batch_size
         print(f"Generation {generation}: [{team_count}/{Parameters.POPULATION_SIZE}]")
 
     print("All environments finished. Uploading to the database now.")
-
     Database.connect("postgres", "template!PWD", Parameters.DATABASE_IP, 5432, "postgres")
 
     Database.add_training_data(training_data)

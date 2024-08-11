@@ -1,9 +1,13 @@
 import random
+import warnings
+
 import numpy as np
 import math
 from parameters import Parameters
 from uuid import uuid4, UUID
 
+warnings.filterwarnings('ignore', category=RuntimeWarning)
+np.seterr(over='ignore')
 
 class Instruction:
 	def __init__(self): 
