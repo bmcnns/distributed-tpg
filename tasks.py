@@ -65,7 +65,6 @@ def run_environment(generation, team_id, model, seed, run_id, shared_list):
     training_data = []
     while step < Parameters.MAX_NUM_STEPS:
         state = obs.flatten()
-        state = obs
         action = Parameters.ACTIONS.index(team.getAction(model.teamPopulation, state, visited=[]))
         obs, rew, term, trunc, info = env.step(action)
 
