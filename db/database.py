@@ -182,13 +182,72 @@ class Database:
 
     @staticmethod
     def remove_team(run_id, team):
-        duckdb.sql(f"DELETE FROM db.public.programs WHERE team_id = '{team.id}' AND run_id = '{run_id}';")
         duckdb.sql(f"DELETE FROM db.public.teams WHERE id = '{team.id}' AND run_id = '{run_id}';")
 
     @staticmethod
     def remove_program(run_id, program, team):
         duckdb.sql(
             f"DELETE FROM db.public.programs WHERE run_id = '{run_id}' AND id = '{program.id}' AND team_id = '{team.id}';")
+
+    @staticmethod
+    def remove_programs(run_id, removed_programs_and_teams):
+        duckdb.query("""
+        CREATE TEMPORARY TABLE temp_delete_ids (
+        program_id INT,
+        team_id INT
+        ); 
+        """)
+
+        values_clause = ', '.join(f"({program_id}, {team_id})" for program_id, team_id in removed_programs_and_teams)
+        insert_statement = f"""
+        INSERT INTO temp_delete_ids (program_id, team_id)
+        VALUES {values_clause};"""
+
+        duckdb.sql(f"""
+        DELETE p
+        FROM db.public.programs p
+        JOIN temp_delete_ids t ON p.id = t.program_id AND p.team_id = t.team_id
+        WHERE p.run_id = '{run_id}';
+        """)
+
+        duckdb.sql(f"""
+        DROP TEMPORARY TABLE temp_delete_ids;
+        """)
+
+    @staticmethod
+    def remove_teams(run_id, removed_teams):
+        duckdb.query("""
+                    CREATE TEMPORARY TABLE temp_remove_teams (
+                        team_id UUID
+                    );
+                """)
+
+        # Prepare the VALUES clause for batch insertion
+        values_clause = ', '.join(f"('{team_id}')" for team_id in removed_teams)
+
+        # Form the complete INSERT statement
+        insert_statement = f"""
+                INSERT INTO temp_remove_teams (team_id)
+                VALUES {values_clause};
+                """
+
+        # Execute the INSERT statement
+        duckdb.query(insert_statement)
+
+        # Perform the batch DELETE operation
+        delete_statement = f"""
+                DELETE t
+                FROM Teams t
+                JOIN temp_remove_teams r
+                ON t.id = r.team_id
+                WHERE t.run_id = '{run_id}';
+                """
+
+        # Execute the DELETE statement
+        duckdb.query(delete_statement)
+
+        # Drop the temporary table
+        duckdb.query("DROP TABLE temp_remove_teams;")
 
     @staticmethod
     def add_program(run_id, program, team):
