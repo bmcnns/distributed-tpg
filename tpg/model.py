@@ -92,7 +92,9 @@ class Model:
                     profile.append(
                         Parameters.ACTIONS.index(clone.getAction(self.teamPopulation, observation, visited=[])))
 
+            print("Adding diversity profiles now")
             Database.add_profile(run_id, clone, time.time(), profile)
 
             self.teamPopulation.append(clone)
+            print("Adding cloned team now")
             Database.add_team(run_id, clone)

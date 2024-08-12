@@ -52,6 +52,7 @@ def train(run_id, configuration, num_generations):
             run_id
         )
 
+        print("Updating teams and programs now")
         for team in model.teamPopulation:
             # We only purge root teams, otherwise, there would never be any surviving child teams.
             if str(team.id) not in [str(team_id) for team_id in Database.get_root_teams(run_id)]:
@@ -70,8 +71,10 @@ def train(run_id, configuration, num_generations):
                     if str(team.id) == _team.id:
                         model.teamPopulation.remove(team)
 
+        print("Cloning existing teams and adding new teams to the database now")
         model.repopulate(run_id, generation)
 
+        print("Updating lucky breaks now")
         # Mark the lucky breaks now
         n = 1
         top_n_teams = Database.get_ranked_teams(run_id, generation).sort_values('rank').head(n)['team_id'].to_list()
@@ -80,8 +83,10 @@ def train(run_id, configuration, num_generations):
                 team.luckyBreaks += 1
                 Database.update_team(run_id, team, team.luckyBreaks)
 
+        print("Showing output now")
         print(Database.get_ranked_teams(run_id, generation).sort_values('rank').head(10))
 
+        print("Adding time monitor data now")
         Database.add_time_monitor_data(run_id, generation, time.time())
 
         print(f"Finished generation {generation}...")
