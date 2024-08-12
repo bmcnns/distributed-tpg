@@ -200,13 +200,13 @@ class Database:
 
         values_clause = ', '.join(f"({program_id}, {team_id})" for program_id, team_id in removed_programs_and_teams)
         insert_statement = f"""
-        INSERT INTO temp_delete_ids (program_id, team_id)
+        INSERT INTO db.public.temp_delete_ids (program_id, team_id)
         VALUES {values_clause};"""
 
         duckdb.sql(f"""
         DELETE p
         FROM db.public.programs p
-        JOIN temp_delete_ids t ON p.id = t.program_id AND p.team_id = t.team_id
+        JOIN db.public.temp_delete_ids t ON p.id = t.program_id AND p.team_id = t.team_id
         WHERE p.run_id = '{run_id}';
         """)
 
@@ -227,7 +227,7 @@ class Database:
 
         # Form the complete INSERT statement
         insert_statement = f"""
-                INSERT INTO temp_remove_teams (team_id)
+                INSERT INTO db.public.temp_remove_teams (team_id)
                 VALUES {values_clause};
                 """
 
@@ -237,8 +237,8 @@ class Database:
         # Perform the batch DELETE operation
         delete_statement = f"""
                 DELETE t
-                FROM Teams t
-                JOIN temp_remove_teams r
+                FROM db.public.teams t
+                JOIN db.public.temp_remove_teams r
                 ON t.id = r.team_id
                 WHERE t.run_id = '{run_id}';
                 """

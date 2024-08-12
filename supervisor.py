@@ -57,9 +57,11 @@ def train(run_id, configuration, num_generations):
         teams_to_remove = []
 
         print("Updating teams and programs now")
+
+        root_teams = Database.get_root_teams(run_id)
         for team in model.teamPopulation:
             # We only purge root teams, otherwise, there would never be any surviving child teams.
-            if str(team.id) not in [str(team_id) for team_id in Database.get_root_teams(run_id)]:
+            if str(team.id) not in [str(team_id) for team_id in root_teams]:
                 continue
             if team.id not in model.get_survivor_ids(run_id, generation):
                 if team.luckyBreaks > 0:
