@@ -61,7 +61,7 @@ def train(run_id, configuration, num_generations):
         root_teams = Database.get_root_teams(run_id)
         survivor_ids = model.get_survivor_ids(run_id, generation)
 
-        for team in root_teams:
+        for team in model.teamPopulation:
             if team.id not in survivor_ids:
                 if team.luckyBreaks > 0:
                     team.luckyBreaks -= 1
@@ -70,17 +70,20 @@ def train(run_id, configuration, num_generations):
                     continue
 
                 for program in team.programs:
-                    programs_to_remove += (program.id, team.id)
+                    programs_to_remove += (program, team)
 
-                teams_to_remove += team.id
+                teams_to_remove += team
 
                 for _team in model.teamPopulation:
                     if str(team.id) == _team.id:
                         model.teamPopulation.remove(team)
 
         print("Removing programs and teams EXACTLY at this point")
-        Database.remove_programs(run_id, programs_to_remove)
-        Database.remove_teams(run_id, teams_to_remove)
+        for program, team in programs_to_remove:
+            Database.remove_program(run_id, program, team)
+
+        for team in teams_to_remove:
+            Database.remove_team(run_id, team)
 
         print("Cloning existing teams and adding new teams to the database now")
         model.repopulate(run_id, generation)
