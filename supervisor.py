@@ -134,6 +134,10 @@ if __name__ == '__main__':
     assert num_runs == len(configurations), "A configuration must be given for each run"
     run_ids = [uuid.uuid4() for _ in range(num_runs)]
 
+    print("The following runs will be completed...")
+    for run_id, configuration in zip(run_ids, configurations):
+        pprint.pp((run_id, configuration))
+
     for run_id, configuration in zip(run_ids, configurations):
 
         Database.add_compute_config(

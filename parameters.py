@@ -21,13 +21,13 @@ class Parameters:
 	POPGAP: float = 0.5
 	
 	#: The list of possible actions for the environment.
-	ACTIONS: List = [ "DO_NOTHING", "GAS", "BRAKE", "LEFT", "RIGHT" ]
+	ACTIONS: List = [ "LEFT", "RIGHT" ]
 
 	#: The name of the environment.
-	ENVIRONMENT: str = "CartPole-v2"
+	ENVIRONMENT: str = "CartPole-v1"
 
 	#: The size of the state/observation space.
-	NUM_OBSERVATIONS: int = 96*96*3
+	NUM_OBSERVATIONS: int = 4
 
 	#: The number of registers that all programs have.
 	NUM_REGISTERS: int = 8
